@@ -1,0 +1,369 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 style="font-family: 'ExcaliburNouveau', sans-serif;">Band and DJ Booking</h1>
+
+<!-- Button to open modal for adding a new booking -->
+{% if session.get('role') in ['Admin', 'Vorstand'] %}
+<button id="openFormButton" class="btn btn-primary" onclick="openAddModal()">Add Booking</button>
+{% endif %}
+<!-- Modal for adding/editing a booking -->
+<div id="formModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <form method="POST" action="{{ url_for('bands.bands') }}" enctype="multipart/form-data">
+            <input type="hidden" id="band_id" name="band_id">
+
+            <label for="name">1. Name:</label>
+            <input type="text" id="name" name="name" required><br>
+
+            <label for="type">2. Type:</label>
+            <select id="type" name="type" class="form-control">
+                <option value="Band">Band</option>
+                <option value="DJ">DJ</option>
+                <option value="Band">Band</option>
+                <option value="DJ">DJ</option>
+            </select><br>
+
+            <label for="description">3. Description:</label>
+            <textarea id="description" name="description" rows="4" cols="50"></textarea><br>
+
+            <label for="logo">4. Logo:</label>
+            <input type="file" id="logo" name="logo" accept="image/*"><br>
+            <input type="hidden" id="current_logo" name="current_logo">
+            <div id="logoPreview">
+                {% if current_logo %}
+                <img src="{{ url_for('static', filename=current_logo) }}" alt="Current Logo" width="100"><br>
+                {% endif %}
+            </div>
+
+            <label for="genre">5. Genre:</label>
+            <input type="text" id="genre" name="genre"><br>
+
+            <label for="bandcamp">6. Bandcamp:</label>
+            <input type="url" id="bandcamp" name="bandcamp"><br>
+
+            <label for="facebook">7. Facebook:</label>
+            <input type="url" id="facebook" name="facebook"><br>
+
+            <label for="instagram">8. Instagram:</label>
+            <input type="url" id="instagram" name="instagram"><br>
+
+            <label for="youtube">9. YouTube:</label>
+            <input type="url" id="youtube" name="youtube"><br>
+
+            <label for="contact_method">10. Contact Method:</label>
+            <input type="text" id="contact_method" name="contact_method"><br>
+
+            <label for="last_booked">11. Last Booked:</label>
+            <input type="date" id="last_booked" name="last_booked"><br>
+
+            <label for="comments">12. Comments:</label>
+            <textarea id="comments" name="comments" rows="4" cols="50"></textarea><br>
+
+            <label for="doordeal">13. Doordeal:</label>
+            <input type="checkbox" id="doordeal" name="doordeal"><br>
+
+            <label for="price">14. Price:</label>
+            <input type="text" id="price" name="price"><br>
+
+            <button type="submit" class="btn btn-primary">Save Booking</button>
+        </form>
+    </div>
+</div>
+
+<hr>
+{% if session.get('role') in ['Admin', 'Vorstand'] %}
+<!-- Button to open the Standard Email Modal -->
+<button id="openEmailModalButton" class="btn btn-secondary" onclick="openEmailModal()">Standard Email</button>
+{% endif %}
+<!-- List of Bands and DJs -->
+<h2>Existing Bookings</h2>
+<div class="tile-list">
+    {% for booking in bands %}
+    <div class="tile">
+        {% if session.get('role')|lower in ['admin', 'vorstand'] %}
+        <div class="icon-container">
+            <a href="javascript:void(0);" onclick="openEditModal({{ booking[0] }})" title="Edit"
+                class="edit-icon">✏️</a>
+            <form action="{{ url_for('bands.delete_band', band_id=booking[0]) }}" method="POST"
+                style="display: inline;">
+                <button type="submit" class="delete-icon" title="Delete">❌</button>
+            </form>
+        </div>
+        {% endif %}
+        <h3>{{ booking[1] }}</h3> <!-- Name -->
+        {% if booking[3] %} <!-- Logo -->
+        <img src="{{ url_for('static', filename=booking[3]) }}" alt="Logo" width="100">
+        {% endif %}
+        <br>
+        <strong>Type:</strong> {{ booking[12] }}<br> <!-- Type -->
+        <strong>Description:</strong> {{ booking[2] }}<br> <!-- Description -->
+        <strong>Genre:</strong> {{ booking[4] }}<br> <!-- Genre -->
+        <strong>Bandcamp:</strong> <a href="{{ booking[5] }}" target="_blank">{{ booking[5] }}</a><br> <!-- Bandcamp -->
+        <strong>Facebook:</strong> <a href="{{ booking[6] }}" target="_blank">{{ booking[6] }}</a><br> <!-- Facebook -->
+        <strong>Instagram:</strong> <a href="{{ booking[7] }}" target="_blank">{{ booking[7] }}</a><br>
+        <!-- Instagram -->
+        <strong>YouTube:</strong> <a href="{{ booking[8] }}" target="_blank">{{ booking[8] }}</a><br> <!-- YouTube -->
+        <strong>Contact:</strong> {{ booking[9] }}<br> <!-- Contact Method -->
+        <strong>Last Booked:</strong> {{ booking[10] }}<br> <!-- Last Booked -->
+        <strong>Comments:</strong> {{ booking[11] }}<br> <!-- Comments -->
+        {% if session.get('role') in ['Admin', 'Vorstand'] %}
+        <strong>Doordeal:</strong> <input type="checkbox" disabled {{ 'checked' if booking[13] else '' }}><br>
+        <!-- Doordeal -->
+        <strong>Price:</strong> {{ booking[14] }}<br> <!-- Price -->
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Standard Email Modal -->
+<div id="emailModal" class="modal">
+    <div class="modal-content">
+        <span class="close-email-button">&times;</span>
+        <h2>Standard Email</h2>
+        <div id="emailContent" contenteditable="true" oninput="showSaveButton()"
+            style="white-space: pre-wrap; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; width: 100%; max-width: 600px; height: auto; overflow-y: auto;">
+            {{ email_content | safe }}
+        </div>
+
+        <button onclick="copyToClipboard()">Copy to Clipboard</button>
+        <br>
+        <button id="saveEmailButton" onclick="saveEmail()" style="display:none;">Save</button>
+    </div>
+</div>
+
+<script>
+    // Function to open the email modal
+    function openEmailModal() {
+        fetch('/get_email_template')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("emailContent").innerText = data.email_content;
+                document.getElementById("emailModal").style.display = "block";
+            })
+            .catch(error => console.error('Error fetching email content:', error));
+    }
+
+    // Show the save button when the content is edited
+    function showSaveButton() {
+        document.getElementById("saveEmailButton").style.display = "inline";
+    }
+
+    // Function to copy the email content to the clipboard
+    function copyToClipboard() {
+        const content = document.getElementById("emailContent").innerText;
+        navigator.clipboard.writeText(content).then(() => {
+            alert("Text copied to clipboard!");
+        }).catch(err => {
+            alert("Failed to copy text: ", err);
+        });
+    }
+
+    // Function to save the edited email content
+    function saveEmail() {
+        const emailContent = document.getElementById("emailContent").innerText;
+        fetch('/save_email_template', {  // Directly at root level
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email_content: emailContent })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert("Email template saved!");
+                    document.getElementById("saveEmailButton").style.display = "none";
+                } else {
+                    alert("Failed to save email template: " + (data.error || "Unknown error"));
+                }
+            })
+            .catch(error => console.error("Error saving email template:", error));
+    }
+    function saveEmail() {
+        const emailContent = document.getElementById("emailContent").innerText;
+        fetch('/save_email_template', {  // Directly at root level
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email_content: emailContent })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert("Email template saved!");
+                    document.getElementById("saveEmailButton").style.display = "none";
+                } else {
+                    alert("Failed to save email template: " + (data.error || "Unknown error"));
+                }
+            })
+            .catch(error => console.error("Error saving email template:", error));
+    }
+
+
+    // Close the email modal when clicking the close button or outside the modal
+    document.querySelector(".close-email-button").onclick = function () {
+        document.getElementById("emailModal").style.display = "none";
+    };
+
+    window.onclick = function (event) {
+        if (event.target === document.getElementById("emailModal")) {
+            document.getElementById("emailModal").style.display = "none";
+        }
+    }; function openAddModal() {
+        document.getElementById('band_id').value = '';
+        document.getElementById('name').value = '';
+        document.getElementById('type').value = 'Band';
+        document.getElementById('description').value = '';
+        document.getElementById('genre').value = '';
+        document.getElementById('bandcamp').value = '';
+        document.getElementById('facebook').value = '';
+        document.getElementById('instagram').value = '';
+        document.getElementById('youtube').value = '';
+        document.getElementById('contact_method').value = '';
+        document.getElementById('last_booked').value = '';
+        document.getElementById('comments').value = '';
+        document.getElementById('doordeal').checked = false;
+        document.getElementById('price').value = '';
+        formModal.style.display = "block";
+    }
+
+    function openEditModal(bandId) {
+        fetch(`/edit_band/${bandId}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('band_id').value = bandId;
+                document.getElementById('name').value = data.name;
+                document.getElementById('type').value = data.type;
+                document.getElementById('description').value = data.description || '';
+                document.getElementById('genre').value = data.genre || '';
+                document.getElementById('bandcamp').value = data.bandcamp || '';
+                document.getElementById('facebook').value = data.facebook || '';
+                document.getElementById('instagram').value = data.instagram || '';
+                document.getElementById('youtube').value = data.youtube || '';
+                document.getElementById('contact_method').value = data.contact_method || '';
+                document.getElementById('last_booked').value = data.last_booked || '';
+                document.getElementById('comments').value = data.comments || '';
+                document.getElementById('doordeal').checked = data.doordeal || false;
+                document.getElementById('price').value = data.price || '';
+                document.getElementById('current_logo').value = data.logo || '';
+
+                const logoPreview = document.getElementById('logoPreview');
+                logoPreview.innerHTML = data.logo ? `<img src="/static/${data.logo}" alt="Current Logo" width="100"><br>` : '';
+
+                formModal.style.display = "block";
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    // Close the modal
+    function closeModal() {
+        formModal.style.display = "none";
+    }
+
+    // Attach close button functionality
+    document.querySelector("#formModal .close-button").onclick = function () {
+        closeModal();
+    };
+
+    // Close modal on outside click
+    window.onclick = function (event) {
+        if (event.target === formModal) {
+            closeModal();
+        }
+    };
+    window.onclick = function (event) {
+    if (event.target === formModal) {
+        closeModal();
+    }
+    };
+</script>
+
+<style>
+    /* Modal and button styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: 10% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        max-width: 600px;
+    }
+
+    .close-button {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .close-button:hover {
+        color: black;
+        text-decoration: none;
+    }
+
+    .tile-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: center;
+    }
+
+    .tile {
+        position: relative;
+        background-color: #f5f5f5bf;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        width: 200px;
+        text-align: center;
+    }
+
+    .icon-container {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+    }
+
+    .edit-icon,
+    .delete-icon {
+        font-size: 0.8em;
+        margin-left: 5px;
+        cursor: pointer;
+    }
+
+    .delete-icon {
+        color: red;
+    }
+
+    .edit-icon:hover {
+        color: #007bff;
+    }
+
+    .delete-icon:hover {
+        color: darkred;
+    }
+</style>
+
+{% endblock %}

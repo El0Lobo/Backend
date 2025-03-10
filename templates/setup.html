@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Standards</h1>
+<div class="List" id="list">
+    <form action="{{ url_for('setup.setup') }}" method="POST" enctype="multipart/form-data">
+        <!-- Organization Details -->
+        <label for="organization_name">Organization Name:</label>
+        <input type="text" id="organization_name" name="organization_name" value="{{ schema_defaults.get('organization_name', '') }}"><br>
+
+        <label for="organization_website">Organization Website:</label>
+        <input type="text" id="organization_website" name="organization_website" value="{{ schema_defaults.get('organization_website', '') }}"><br>
+
+        <label for="organization_logo">Organization Logo:</label>
+        <input type="file" id="organization_logo" name="organization_logo" accept="image/*"><br>
+        {% if schema_defaults.get('organization_logo') %}
+            <img src="{{ url_for('static', filename='uploads/' + schema_defaults.get('organization_logo')) }}" alt="Organization Logo" width="100"><br>
+        {% endif %}
+
+        <!-- Author Details -->
+        <label for="author_name">Author Name:</label>
+        <input type="text" id="author_name" name="author_name" value="{{ schema_defaults.get('author_name', '') }}"><br>
+
+        <!-- Location Details -->
+        <label for="location_name">Location Name:</label>
+        <input type="text" id="location_name" name="location_name" value="{{ schema_defaults.get('location_name', '') }}"><br>
+
+        <label for="street_address">Street Address:</label>
+        <input type="text" id="street_address" name="street_address" value="{{ schema_defaults.get('street_address', '') }}"><br>
+
+        <label for="city">City:</label>
+        <input type="text" id="city" name="city" value="{{ schema_defaults.get('city', '') }}"><br>
+
+        <label for="postal_code">Postal Code:</label>
+        <input type="text" id="postal_code" name="postal_code" value="{{ schema_defaults.get('postal_code', '') }}"><br>
+
+        <label for="country">Country:</label>
+        <input type="text" id="country" name="country" value="{{ schema_defaults.get('country', '') }}"><br>
+
+        <!-- Venue Type Selection -->
+        <label for="venue_type">Venue Type:</label>
+        <select id="venue_type" name="venue_type" onchange="addVenueType()">
+            <option value="MusicVenue">Music Venue</option>
+            <option value="BarOrPub">Bar or Pub</option>
+            <option value="NightClub">Night Club</option>
+            <option value="Restaurant">Restaurant</option>
+            <option value="CafeOrCoffeeShop">Cafe or Coffee Shop</option>
+            <option value="EventVenue">Event Venue</option>
+        </select>
+        <div id="selected_venues">
+            {% if schema_defaults.get('venue_type') %}
+                {% for venue in schema_defaults.get('venue_type').split(',') %}
+                    <span class="selected-venue" style="background-color: rgba(255, 255, 255, 0.2); padding: 5px; margin: 5px; display: inline-block; border: 1px solid antiquewhite;">
+                        {{ venue }}
+                    </span>
+                {% endfor %}
+            {% endif %}
+        </div>
+        <input type="hidden" id="venue_type_list" name="venue_type_list" value="{{ schema_defaults.get('venue_type', '') }}">
+        <br>
+
+        <!-- Accessibility -->
+        <label for="accessibility">Accessibility:</label>
+        <select id="accessibility" name="accessibility">
+            <option value="WheelchairAccessible" {% if schema_defaults.get('accessibility') == 'WheelchairAccessible' %}selected{% endif %}>Wheelchair Accessible</option>
+            <option value="NotWheelchairAccessible" {% if schema_defaults.get('accessibility') == 'NotWheelchairAccessible' %}selected{% endif %}>Not Wheelchair Accessible</option>
+            <option value="PartialWheelchairAccess" {% if schema_defaults.get('accessibility') == 'PartialWheelchairAccess' %}selected{% endif %}>Partial Wheelchair Access</option>
+        </select><br>
+
+        <!-- Event Status -->
+        <label for="event_status">Event Status:</label>
+        <select id="event_status" name="event_status">
+            <option value="https://schema.org/EventScheduled" {% if schema_defaults.get('event_status') == 'https://schema.org/EventScheduled' %}selected{% endif %}>Event Scheduled</option>
+            <option value="https://schema.org/EventCancelled" {% if schema_defaults.get('event_status') == 'https://schema.org/EventCancelled' %}selected{% endif %}>Event Cancelled</option>
+            <option value="https://schema.org/EventPostponed" {% if schema_defaults.get('event_status') == 'https://schema.org/EventPostponed' %}selected{% endif %}>Event Postponed</option>
+            <option value="https://schema.org/EventRescheduled" {% if schema_defaults.get('event_status') == 'https://schema.org/EventRescheduled' %}selected{% endif %}>Event Rescheduled</option>
+        </select><br>
+
+        <!-- Default Image -->
+        <label for="default_image">Default Image:</label>
+        <input type="file" id="default_image" name="default_image" accept="image/*"><br>
+        {% if schema_defaults.get('default_image') %}
+            <img src="{{ url_for('static', filename='uploads/' + schema_defaults.get('default_image')) }}" alt="Default Image" width="100"><br>
+        {% endif %}
+
+        <!-- Contact Information -->
+        <label for="contact_email">Contact Email:</label>
+        <input type="text" id="contact_email" name="contact_email" value="{{ schema_defaults.get('contact_email', '') }}"><br>
+
+        <label for="contact_phone">Contact Phone:</label>
+        <input type="text" id="contact_phone" name="contact_phone" value="{{ schema_defaults.get('contact_phone', '') }}"><br>
+
+        <!-- Opening Times -->
+        <h3>Opening Times</h3>
+        {% for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] %}
+            <label for="{{ day }}_status">{{ day.capitalize() }} Status:</label>
+            <select id="{{ day }}_status" name="{{ day }}_status" onchange="toggleOpeningTimes('{{ day }}')">
+                <option value="closed" {% if schema_defaults.get(day + '_status') == 'closed' %}selected{% endif %}>Closed</option>
+                <option value="open" {% if schema_defaults.get(day + '_status') == 'open' %}selected{% endif %}>Open</option>
+                <option value="by_appointment" {% if schema_defaults.get(day + '_status') == 'by_appointment' %}selected{% endif %}>By Appointment</option>
+            </select><br>
+
+            <div id="{{ day }}_times" style="display: {% if schema_defaults.get(day + '_status') == 'open' %}block{% else %}none{% endif %};">
+                <label for="{{ day }}_opening_time">{{ day.capitalize() }} Opening:</label>
+                <input type="time" id="{{ day }}_opening_time" name="{{ day }}_opening_time" value="{{ schema_defaults.get(day + '_opening_time', '') }}">
+                <label for="{{ day }}_closing_time">Closing:</label>
+                <input type="time" id="{{ day }}_closing_time" name="{{ day }}_closing_time" value="{{ schema_defaults.get(day + '_closing_time', '') }}"><br><br>
+            </div>
+        {% endfor %}
+
+        <!-- Social Media Links -->
+        <h3>Social Media Links</h3>
+
+        <label for="facebook">Facebook:</label>
+        <input type="url" id="facebook" name="facebook" value="{{ schema_defaults.get('facebook', '') }}"><br>
+
+        <label for="instagram">Instagram:</label>
+        <input type="url" id="instagram" name="instagram" value="{{ schema_defaults.get('instagram', '') }}"><br>
+
+        <label for="twitter">Twitter:</label>
+        <input type="url" id="twitter" name="twitter" value="{{ schema_defaults.get('twitter', '') }}"><br>
+
+        <label for="youtube">YouTube:</label>
+        <input type="url" id="youtube" name="youtube" value="{{ schema_defaults.get('youtube', '') }}"><br>
+
+        <label for="linkedin">LinkedIn:</label>
+        <input type="url" id="linkedin" name="linkedin" value="{{ schema_defaults.get('linkedin', '') }}"><br>
+
+        <!-- Submit Button -->
+        <button type="submit">Save Defaults</button>
+    </form>
+</div>
+<style>
+    #list {
+        background-color: #043368c9;
+        max-width: fit-content;
+        padding: 10px;
+        color: antiquewhite;
+    }
+</style>
+
+<script>
+    function addVenueType() {
+        const venueSelect = document.getElementById("venue_type");
+        const selectedVenuesDiv = document.getElementById("selected_venues");
+        const venueTypeListInput = document.getElementById("venue_type_list");
+
+        // Get the selected option value
+        const selectedOptionValue = venueSelect.value;
+
+        // Check if the value is already selected
+        if (venueTypeListInput.value.split(',').includes(selectedOptionValue)) {
+            return; // Prevent adding duplicates
+        }
+
+        // Create a new element for the selected venue
+        const selectedVenueElement = document.createElement("span");
+        selectedVenueElement.textContent = selectedOptionValue;
+        selectedVenueElement.className = "selected-venue";
+        selectedVenueElement.style.backgroundColor = "rgba(255, 255, 255, 0.2)";
+        selectedVenueElement.style.padding = "5px";
+        selectedVenueElement.style.margin = "5px";
+        selectedVenueElement.style.display = "inline-block";
+        selectedVenueElement.style.border = "1px solid antiquewhite";
+
+        // Append the selected venue to the div
+        selectedVenuesDiv.appendChild(selectedVenueElement);
+
+        // Update the hidden input to store selected values
+        let currentValues = venueTypeListInput.value ? venueTypeListInput.value.split(',') : [];
+        currentValues.push(selectedOptionValue);
+        venueTypeListInput.value = currentValues.join(',');
+    }
+ 
+    function toggleOpeningTimes(day) {
+        const status = document.getElementById(`${day}_status`).value;
+        const timesDiv = document.getElementById(`${day}_times`);
+
+        if (status === 'open') {
+            timesDiv.style.display = 'block';
+            document.getElementById(`${day}_opening_time`).required = true;
+            document.getElementById(`${day}_closing_time`).required = true;
+        } else {
+            timesDiv.style.display = 'none';
+            document.getElementById(`${day}_opening_time`).required = false;
+            document.getElementById(`${day}_closing_time`).required = false;
+        }
+    }
+
+    function validateForm() {
+        // Loop through each day to validate the form if "Open" is selected
+        const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+        for (let day of days) {
+            const status = document.getElementById(`${day}_status`).value;
+            if (status === 'open') {
+                const openingTime = document.getElementById(`${day}_opening_time`).value;
+                const closingTime = document.getElementById(`${day}_closing_time`).value;
+
+                if (!openingTime || !closingTime) {
+                    alert(`Please provide both opening and closing times for ${day.charAt(0).toUpperCase() + day.slice(1)}`);
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+</script>
+{% endblock %}

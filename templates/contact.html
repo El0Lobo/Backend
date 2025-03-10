@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Contact Management</h1>
+
+<button id="openAddContactModal" class="btn btn-primary" onclick="openModal('Add New Contact')">Add New Contact</button>
+
+<div id="contactModal" class="modal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="modalTitle" class="modal-title">Add New Contact</h5>
+                <button type="button" class="close-button" aria-label="Close" onclick="closeModal()">&times;</button>
+            </div>
+            <!-- Only one email field, used for both Person and Service Login categories -->
+            <div class="modal-body">
+                <form id="contactForm" action="{{ url_for('contact.manage_contacts') }}" method="POST">
+                    <input type="hidden" name="id" id="contactId">
+                    <div class="mb-3">
+                        <label for="category" class="form-label">Category:</label>
+                        <select name="category" id="category" class="form-control" required onchange="toggleFields()">
+                            <option value="Person">Person</option>
+                            <option value="Service Login">Login</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Name:</label>
+                        <input type="text" name="name" id="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email:</label>
+                        <input type="email" name="email" id="email" class="form-control">
+                    </div>
+                    <div id="personFields">
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Phone Number:</label>
+                            <input type="tel" name="phone" id="phone" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label for="details" class="form-label">Details:</label>
+                            <input type="text" name="details" id="details" class="form-control">
+                        </div>
+                    </div>
+                    <div id="loginFields" style="display:none;">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username:</label>
+                            <input type="text" name="username" id="username" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password:</label>
+                            <input type="text" name="password" id="password" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label for="url" class="form-label">URL:</label>
+                            <input type="url" name="url" id="url" class="form-control">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes:</label>
+                        <textarea name="notes" id="notes" class="form-control"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Contact</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h2>Persons</h2>
+<div class="contact-grid">
+    {% for contact in contacts if contact['category'] == 'Person' %}
+    <div class="contact-tile">
+        <h5>{{ contact["name"] }}</h5>
+        <p>Email: {{ contact["email"] }}</p>
+        <p>Phone: {{ contact["phone"] }}</p>
+        <p>Details: {{ contact["details"] }}</p>
+        <p>Notes: {{ contact["notes"] }}</p>
+        <button class="btn btn-secondary" onclick="openEditModal({{ contact['id'] }})">Edit</button>
+        <form action="{{ url_for('contact.delete_contact', contact_id=contact['id']) }}" method="POST"
+            style="display:inline;">
+            <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+    </div>
+    {% endfor %}
+</div>
+
+<h2>Logins</h2>
+<div class="contact-grid">
+    {% for contact in contacts if contact['category'] == 'Service Login' %}
+    <div class="contact-tile">
+        <h5>{{ contact["name"] }}</h5>
+        <p>Username: {{ contact["username"] }}</p>
+        <p>URL: <a href="{{ contact[" url"] }}" target="_blank">{{ contact["url"] }}</a></p>
+        <p>Email: {{ contact["email"] }}</p>
+        <p>Password: {{ contact["password"] }}</p>
+        <p>Notes: {{ contact["notes"] }}</p>
+        <button class="btn btn-secondary" onclick="openEditModal({{ contact['id'] }})">Edit</button>
+        <form action="{{ url_for('contact.delete_contact', contact_id=contact['id']) }}" method="POST"
+            style="display:inline;">
+            <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+    function closeModal() {
+        document.getElementById("contactModal").style.display = "none";
+    }
+
+    function openModal(title, contact = {}) {
+        document.getElementById("modalTitle").innerText = title;
+        document.getElementById("contactForm").reset();
+        document.getElementById("contactModal").style.display = "block";
+
+        document.getElementById("contactId").value = contact.id || "";
+        document.getElementById("category").value = contact.category || "Person";
+        document.getElementById("name").value = contact.name || "";
+        document.getElementById("email").value = contact.email || "";
+        document.getElementById("phone").value = contact.phone || "";
+        document.getElementById("details").value = contact.details || "";
+        document.getElementById("username").value = contact.username || "";
+        document.getElementById("password").value = contact.password || "";
+        document.getElementById("url").value = contact.url || "";
+        document.getElementById("notes").value = contact.notes || "";
+
+        toggleFields();
+    }
+
+    function openEditModal(contactId) {
+        fetch(`/contacts/edit/${contactId}`)
+            .then(response => response.json())
+            .then(contact => {
+                if (contact.error) {
+                    alert(contact.error);
+                    return;
+                }
+                openModal("Edit Contact", contact);
+            })
+            .catch(error => console.error("Error fetching contact:", error));
+    }
+
+    function toggleFields() {
+    const category = document.getElementById("category").value;
+    document.getElementById("personFields").style.display = (category === "Person") ? "block" : "none";
+    document.getElementById("loginFields").style.display = (category === "Service Login") ? "block" : "none";
+}
+</script>
+
+<style>
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: 5% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        max-width: 600px;
+        border-radius: 8px;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .close-button {
+        background: none;
+        border: none;
+        font-size: 1.5em;
+        cursor: pointer;
+        margin-left: auto;
+    }
+
+    .contact-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .contact-tile {
+        border: 1px solid #ddd;
+        padding: 15px;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+        text-align: center;
+        width: fit-content;
+    }
+</style>
+{% endblock %}

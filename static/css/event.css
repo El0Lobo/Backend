@@ -1,0 +1,433 @@
+#calendar {
+  max-width: 1000px; /* Controls the width of the calendar */
+  margin: 40px auto; /* Centers the calendar */
+  overflow: visible; /* Ensures content isn't hidden */
+  height: auto; /* Dynamically adjusts height based on content */
+  min-height: auto; /* Allows it to shrink below the viewport height */
+  display: block; /* Ensures the calendar takes its full content height */
+}
+
+.holiday-event {
+  background-color: lightgreen !important;
+  color: black;
+  opacity: 0.3;
+  position: relative;
+}
+.user-event {
+  background-color: #cf59059d !important;
+  border-color: #1e90ff !important;
+  color: white !important;
+}
+.holiday-event .fc-event-title {
+  color: black;
+  font-weight: bold;
+  opacity: 1;
+}
+tbody[role="rowgroup"] {
+  background-color: #a3b4cebe;
+}
+
+.fc-daygrid-day.fc-day-past::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #ababab59;
+  pointer-events: none;
+  z-index: 100;
+  pointer-events: none;
+}
+.fc-day {
+  background-color: #a6a6a659;
+}
+.fc-day-sat {
+  background-color: #8606cb59;
+}
+.fc-day-sun {
+  background-color: #5b06cb59;
+}
+.custom-event {
+  background-color: lightblue;
+  color: black;
+  position: relative;
+  padding-top: 20px;
+  font-weight: bold;
+}
+.custom-event-container {
+  padding: 5px;
+  font-weight: bold;
+}
+.event-controls {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: flex;
+  gap: 5px;
+}
+.event-controls button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+}
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 2;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgb(255, 255, 255);
+  width: auto;
+  height: auto;
+  padding: 10px;
+  border-radius: 10px;
+  overflow: auto;
+}
+.overlay {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+.modal-content {
+  background-color: #fefefe;
+  padding: 20px;
+  border: 1px solid #888;
+  border-radius: 8px;
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  box-sizing: border-box;
+}
+.close-button {
+  color: #aaa;
+  float: right;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 5px;
+}
+.description-group label {
+  display: block;
+  margin-bottom: 4px;
+}
+.description-group textarea {
+  width: 100%;
+  /* Full-width for the textarea */
+  max-width: 600px;
+}
+#calendar {
+  margin-top: -66px;
+  margin-right: auto;
+  margin-bottom: 40px;
+  margin-left: auto;
+}
+
+.performer-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.performer-field {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.autocomplete-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  border: 1px solid #ccc;
+  max-height: 150px;
+  overflow-y: auto;
+  background: white;
+  z-index: 1000;
+}
+
+.suggestion-item {
+  padding: 8px;
+  cursor: pointer;
+}
+
+.suggestion-item:hover {
+  background-color: #f0f0f0;
+}
+
+.holiday-background {
+  background-color: rgba(
+    255,
+    223,
+    186,
+    0.5
+  ); /* Light orange with transparency */
+  border: none;
+  pointer-events: none; /* Ensure it is non-interactive */
+}
+
+.fc .fc-daygrid-day.fc-day-today {
+  background-color: rgba(150, 15, 15, 0.5); /* Light orange with transparency */
+}
+
+.shifts-container div {
+  margin: 5px 0;
+  display: flex;
+  align-items: center;
+}
+
+input[type="checkbox"] {
+  margin-right: 10px;
+}
+
+.help-button,
+.edit-button,
+.delete-button,
+.assign-shift-button {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.edit-button {
+  background: #007bff;
+}
+
+.delete-button {
+  background: #dc3545;
+}
+
+.assign-shift-button {
+  background: #ffc107;
+}
+
+.tile {
+  position: relative;
+  background-color: var(--event-bg);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 200px;
+  text-align: center;
+}
+.tile-past {
+  position: relative;
+  background-color: var(--event-bg);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 200px;
+  text-align: center;
+}
+.tile-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  overflow: visible;
+}
+.event-image {
+  width: 100px !important;
+}
+.help-button {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 1.3em;
+  cursor: pointer;
+  font-weight: bold;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);             
+}
+
+.help-button:hover {
+  transform: scale(1.1);                       
+}
+
+
+.proposed-event {
+  background-color: var(--proposed-bg);
+  color: #000;
+}
+
+.intern-event {
+  background-color: var(--intern-bg);
+  color: #000;
+}
+
+.proposed-event.intern-event {
+  background-color: var(--proposed-intern-bg);
+  color: #000;
+}
+
+.tile-proposed {
+  position: relative;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 200px;
+  text-align: center;
+  background-color: var(--proposed-bg);
+}
+
+.tile.intern {
+  background-color: rgba(173, 216, 230, 0.8); /* Light blue */
+}
+
+.tile.proposed.intern {
+  background-color: rgba(221, 160, 221, 0.8); /* Light purple */
+}
+
+.tile.past {
+  background-color: rgba(240, 128, 128, 0.8); /* Light red */
+}
+
+.tile.suggested {
+  background-color: rgba(255, 223, 186, 0.8); /* Light orange */
+}
+
+.tile.intern {
+  background-color: rgba(173, 216, 230, 0.8); /* Light blue */
+}
+
+/* Combined styles for past and suggested */
+.tile.past.suggested {
+  background-color: rgba(255, 160, 160, 0.9); /* Softer red */
+}
+
+/* Combined styles for past and intern */
+.tile.past.intern {
+  background-color: rgba(200, 200, 240, 0.9); /* Softer blue */
+}
+
+/* Common styling for all "Nächste Events" tiles */
+.tile.next-event {
+  border: 2px solid #ddd;
+  padding: 15px;
+  margin: 10px 0;
+  background-color: #f9f9f9;
+  border-radius: 5px;
+}
+
+/* Styling for intern events */
+.tile.next-event.intern-event {
+  background: var(--intern-bg);
+}
+
+/* Styling for suggested events */
+.tile.next-event.suggested-event {
+  background: var(--proposed-bg);
+}
+
+/* Combined styling for both intern and suggested */
+.tile.next-event.intern-event.suggested-event {
+  background: var(--proposed-intern-bg);
+}
+
+/* Styling for intern events */
+.tile-past.intern-event {
+  background: var(--intern-bg);
+}
+
+/* Styling for suggested events */
+.tile-past.suggested-event {
+  background: var(--proposed-bg);
+}
+
+.tile-past.weekly-event {
+  background: var(--recurring-bg);
+}
+
+/* Combined styling for both intern and suggested */
+.tile-past.intern-event.suggested-event {
+  background: var(--proposed-intern-bg);
+}
+
+.event-badge-container {
+  display: flex;
+  flex-direction: row; /* Align badges horizontally */
+  justify-content: center; /* Center badges horizontally */
+  align-items: center; /* Align badges vertically */
+  gap: 10px; /* Add spacing between badges */
+  margin-top: 10px; /* Add spacing from other content */
+}
+
+.event-badge {
+  padding: 5px 10px;
+  border-radius: 4px;
+  color: #fff;
+  font-weight: bold;
+  display: inline-block;
+  text-align: center; /* Center text inside badge */
+}
+
+.event-badge.proposed {
+  background-color: var(--proposed-bg);
+}
+
+.event-badge.intern {
+  background-color: var(--intern-bg);
+}
+
+.event-badge.recurring {
+  background-color: var(--recurring-bg);
+}
+
+.event-badge.proposed-intern {
+  background-color: var(--proposed-intern-bg);
+}
+
+.event-badge.normal {
+  background-color: var(--event-bg);
+}
+
+.weekly-event {
+  background-color: var(--recurring-bg);
+}
+
+.monthly-event {
+  background-color: var(--recurring-bg);
+}
+
+.fc-event:not(.weekly-event):not(.monthly-event):not(.holiday-background) {
+  background-color: var(--event-bg) ; 
+  font-weight: bold;
+}
+
+.past-event {
+  opacity: 0.5;
+}
+
+.custom-event-container {
+  white-space: normal; /* Ensure text wraps as intended */
+}
+
+.type-label,
+.schicht-label,
+.checkbox-wrapper {
+  display: block; /* Force each element to take a new line */
+  margin-bottom: 5px; /* Add space between elements */
+}
+
+.shifts-container {
+  margin-bottom: 10px; /* Add spacing between Theke and Tür sections */
+}
+
+input[type="checkbox"] {
+  margin-right: 5px; /* Add spacing between the checkbox and label */
+}
+
+.checkbox-wrapper {
+  display: flex; /* Align checkbox and label horizontally */
+  align-items: center; /* Center-align checkbox and label vertically */
+}

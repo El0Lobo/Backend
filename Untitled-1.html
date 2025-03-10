@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON-LD Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
+        }
+        input, select, textarea, button {
+            width: 100%;
+            margin-bottom: 15px;
+            padding: 10px;
+            font-size: 14px;
+        }
+        textarea {
+            height: 100px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .output {
+            background-color: #f4f4f4;
+            padding: 15px;
+            border: 1px solid #ccc;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>JSON-LD Generator for Contrast JugendKultur e.V.</h1>
+    <form id="jsonForm">
+        <h2>Venue Details</h2>
+        <label for="venueName">Venue Name</label>
+        <input type="text" id="venueName" value="Contrast JugendKultur e.V." required>
+
+        <label for="venueDescription">Venue Description</label>
+        <textarea id="venueDescription" required>A self-managed cultural center offering concerts, pub nights, and a diverse cultural program.</textarea>
+
+        <label for="venueAddress">Street Address</label>
+        <input type="text" id="venueAddress" value="Joseph-Belli-Weg 11" required>
+
+        <label for="venueCity">City</label>
+        <input type="text" id="venueCity" value="Konstanz" required>
+
+        <label for="venuePostalCode">Postal Code</label>
+        <input type="text" id="venuePostalCode" value="78467" required>
+
+        <label for="venueCountry">Country</label>
+        <input type="text" id="venueCountry" value="Germany" required>
+
+        <label for="venueLatitude">Latitude</label>
+        <input type="number" step="0.0001" id="venueLatitude" value="47.6602" required>
+
+        <label for="venueLongitude">Longitude</label>
+        <input type="number" step="0.0001" id="venueLongitude" value="9.1759" required>
+
+        <label for="venueWebsite">Venue Website</label>
+        <input type="url" id="venueWebsite" value="https://contrast-kn.de">
+
+        <label for="venueLogo">Venue Logo URL</label>
+        <input type="url" id="venueLogo" value="https://contrast-kn.de/logo.png">
+
+        <h2>Event Details</h2>
+        <label for="eventType">Event Type</label>
+        <select id="eventType">
+            <option value="MusicEvent">Music Event</option>
+            <option value="TheaterEvent">Theater Event</option>
+            <option value="DanceEvent">Dance Event</option>
+            <option value="SocialEvent">Social Event</option>
+        </select>
+
+        <label for="eventName">Event Name</label>
+        <input type="text" id="eventName" value="Live Concert: The Vibes Band" required>
+
+        <label for="eventDescription">Event Description</label>
+        <textarea id="eventDescription" required>An electrifying evening with The Vibes Band performing their latest hits.</textarea>
+
+        <label for="eventStartDate">Start Date and Time (YYYY-MM-DDTHH:MM:SS+TZ)</label>
+        <input type="datetime-local" id="eventStartDate" required>
+
+        <label for="eventEndDate">End Date and Time (YYYY-MM-DDTHH:MM:SS+TZ)</label>
+        <input type="datetime-local" id="eventEndDate" required>
+
+        <label for="eventImage">Event Image URL</label>
+        <input type="url" id="eventImage">
+
+        <h2>Performer Details</h2>
+        <label for="performerType">Performer Type</label>
+        <select id="performerType">
+            <option value="MusicGroup">Music Group</option>
+            <option value="Person">Solo Artist/DJ</option>
+        </select>
+
+        <label for="performerName">Performer Name</label>
+        <input type="text" id="performerName" value="The Vibes Band" required>
+
+        <label for="performerGenre">Performer Genre</label>
+        <input type="text" id="performerGenre" value="Pop Rock" required>
+
+        <label for="performerWebsite">Performer Website</label>
+        <input type="url" id="performerWebsite">
+
+        <h2>Generate JSON-LD</h2>
+        <button type="button" onclick="generateJSON()">Generate JSON-LD</button>
+    </form>
+
+    <h2>Output</h2>
+    <div class="output" id="output"></div>
+
+    <script>
+        function generateJSON() {
+            const jsonLD = {
+                "@context": "https://schema.org",
+                "@type": document.getElementById('eventType').value,
+                "name": document.getElementById('eventName').value,
+                "description": document.getElementById('eventDescription').value,
+                "startDate": document.getElementById('eventStartDate').value,
+                "endDate": document.getElementById('eventEndDate').value,
+                "location": {
+                    "@type": "MusicVenue",
+                    "name": document.getElementById('venueName').value,
+                    "description": document.getElementById('venueDescription').value,
+                    "address": {
+                        "@type": "PostalAddress",
+                        "streetAddress": document.getElementById('venueAddress').value,
+                        "addressLocality": document.getElementById('venueCity').value,
+                        "postalCode": document.getElementById('venuePostalCode').value,
+                        "addressCountry": document.getElementById('venueCountry').value
+                    },
+                    "geo": {
+                        "@type": "GeoCoordinates",
+                        "latitude": parseFloat(document.getElementById('venueLatitude').value),
+                        "longitude": parseFloat(document.getElementById('venueLongitude').value)
+                    },
+                    "url": document.getElementById('venueWebsite').value,
+                    "logo": document.getElementById('venueLogo').value
+                },
+                "performer": {
+                    "@type": document.getElementById('performerType').value,
+                    "name": document.getElementById('performerName').value,
+                    "genre": document.getElementById('performerGenre').value,
+                    "url": document.getElementById('performerWebsite').value
+                },
+                "image": document.getElementById('eventImage').value
+            };
+
+            document.getElementById('output').textContent = JSON.stringify(jsonLD, null, 2);
+        }
+    </script>
+</body>
+</html>

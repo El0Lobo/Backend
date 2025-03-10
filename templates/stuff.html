@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Stuff this Place needs</h1>
+<p>Here you can add stuff that you need for Shifts or just things you think should be here.</p>
+
+<!-- Button to Open Modal -->
+{% if session.role in ['Admin', 'Vorstand'] %}
+<button id="openFormButton" class="btn btn-primary">Add Stuff to Get</button>
+{% endif %}
+
+<!-- Modal for Adding Stuff -->
+<div class="modal" id="formModal" tabindex="-1" aria-labelledby="addStuffModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addStuffModalLabel">Add Missing Items</h5>
+                <button type="button" class="close-button" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('stuff.stuff') }}" method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title:</label>
+                        <input type="text" name="title" id="title" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description:</label>
+                        <textarea name="description" id="description" rows="5" class="form-control" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="image" class="form-label">Image (optional):</label>
+                        <input type="file" name="image" id="image" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="intern" class="form-label">Intern?</label>
+                        <input type="checkbox" id="intern" name="intern"><br>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Stuff</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h2>Stuff We Need</h2>
+<div id="stuff-entries">
+    {% for entry in stuff_data %}
+    <div class="stuff-entry">
+        <h3>{{ entry["title"] }}</h3>
+        <p><em>{{ entry["date_added"] }}</em></p>
+        <p>{{ entry["description"] }}</p>
+        <p>Added by: {{ entry["user_name"] }}</p>
+        <p><strong>Status:</strong> {{ "Internal" if entry["is_intern"] else "Public" }}</p>
+        {% if entry["image_path"] %}
+        <img src="{{ entry["image_path"] }}" alt="Stuff Image" class="stuff-image">
+        {% endif %}
+        {% if session.role in ['Admin', 'Vorstand'] %}
+        <button class="btn btn-warning mt-3" onclick="markAsBought('{{ entry.id }}')">Besorgt</button>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<h2>Stuff We Got</h2>
+<div id="stuff-got-entries">
+    {% for entry in bought_stuff_data %}
+    <div class="stuff-entry bought">
+        <h3>{{ entry["title"] }}</h3>
+        <p><em>{{ entry.date_added.strftime('%d %B %Y') }}</em></p>
+        <p>{{ entry["description"] }}</p>
+        <p>Added by: {{ entry["user_name"] }}</p>
+        <p><strong>Status:</strong> {{ "Internal" if entry["is_intern"] else "Public" }}</p>
+        {% if entry["image_path"] %}
+        <img src="{{ url_for('static', filename=entry["image_path"]) }}" alt="Stuff Image" class="stuff-image">
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+<script>
+    const formModal = document.getElementById("formModal");
+    const openFormButton = document.getElementById("openFormButton");
+    const closeButton = document.querySelector(".close-button");
+
+    function markAsBought(stuffId) {
+        fetch(`/mark_bought/${stuffId}`, { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                }
+            });
+    }
+
+    openFormButton.onclick = function () {
+        formModal.style.display = "block";
+    };
+
+    closeButton.onclick = function () {
+        formModal.style.display = "none";
+    };
+
+    window.onclick = function (event) {
+        if (event.target === formModal) {
+            formModal.style.display = "none";
+        }
+    };
+</script>
+
+<style>
+    /* Modal and form styling */
+    .modal {
+        display: none;
+        /* Hidden by default */
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: 5% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        max-width: 600px;
+        border-radius: 8px;
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-dialog {
+        width: 100%;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 20px;
+        background-color: #f1f1f1;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .modal-title {
+        font-size: 18px;
+    }
+
+    .close-button {
+        background: none;
+        border: none;
+        font-size: 1.5em;
+        color: #333;
+        cursor: pointer;
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    .form-label {
+        font-weight: bold;
+    }
+
+    .btn-primary {
+        font-size: 1em;
+    }
+
+    /* Stuff entry styling */
+    .stuff-entry {
+        width: 60%;
+        margin: 20px auto;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        text-align: center;
+        background-color: #043368c9;
+        color: antiquewhite;
+    }
+
+    .stuff-title {
+        font-size: 24px;
+        font-weight: bold;
+    }
+
+    .stuff-date {
+        font-size: 14px;
+        color: #888;
+    }
+
+    .stuff-description {
+        margin: 10px 0;
+    }
+
+    .stuff-image {
+        max-width: 100%;
+        height: auto;
+        margin-top: 10px;
+    }
+
+    .stuff-entry.bought {
+        background-color: #d3d3d3;
+        color: #777;
+        text-decoration: line-through;
+    }
+
+</style>
+
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Change Password</h1>
+<form action="{{ url_for('users.change_password') }}" method="post">
+    <label for="new_password">New Password:</label>
+    <input type="password" id="new_password" name="new_password" required><br><br>
+    <input type="submit" value="Change Password">
+</form>
+{% endblock %}

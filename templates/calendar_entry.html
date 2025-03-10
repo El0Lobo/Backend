@@ -1,0 +1,22 @@
+<div class="calendar-entry">
+
+    <div class="shifts">
+        {% if entry.shifts.theke > 0 %}
+            <div class="shift-label">Theke:</div>
+            {% for i in range(1, entry.shifts.theke + 1) %}
+                <input type="checkbox" id="theke-{{ entry.id }}-{{ i }}" />
+            {% endfor %}
+        {% endif %}
+        {% if entry.shifts.tür > 0 %}
+            <div class="shift-label">Tür:</div>
+            {% for i in range(1, entry.shifts.tür + 1) %}
+                <input type="checkbox" id="tür-{{ entry.id }}-{{ i }}" />
+            {% endfor %}
+        {% endif %}
+    </div>
+    <div class="controls">
+        <button onclick="assignShift({{ entry.id }})">[assign shift]</button>
+        <button onclick="editEvent({{ entry.id }})">[edit]</button>
+        <button onclick="deleteEvent({{ entry.id }})">[delete]</button>
+    </div>
+</div>

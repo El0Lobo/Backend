@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Vote on Important Matters</h1>
+
+<!-- Button to open modal for creating a new vote -->
+{% if session.role in ['Admin', 'Vorstand'] %}
+<button id="openVoteFormButton" class="btn btn-primary">Create New Vote</button>
+{% endif %}
+
+<!-- Modal for Creating a New Vote -->
+<div id="voteFormModal" class="modal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Vote</h5>
+                <button type="button" class="close-button" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('vote.create_vote') }}" method="POST">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title:</label>
+                        <input type="text" name="title" id="title" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description:</label>
+                        <textarea name="description" id="description" rows="5" class="form-control"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="eligible_roles" class="form-label">Eligible Roles:</label>
+                        <select name="eligible_roles" id="eligible_roles" class="form-control">
+                            <option value="everyone">Everyone</option>
+                            {% if session.role in ['Admin', 'Vorstand'] %}
+                            <option value="vorstand">Vorstand</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="multiple_choice" class="form-label">Allow Multiple Choices?</label>
+                        <input type="checkbox" name="multiple_choice" id="multiple_choice" onclick="toggleChoiceFields()">
+                    </div>
+                    <div class="mb-3">
+                        <label for="num_options" class="form-label">Number of Options:</label>
+                        <select id="num_options" name="num_options" class="form-control" onchange="generateOptionFields()">
+                            <option value="" selected disabled>Select number of options</option>
+                            {% for i in range(1, 11) %}
+                            <option value="{{ i }}">{{ i }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div id="option-fields"></div>
+                    <button type="submit" class="btn btn-primary">Create Vote</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Display Active Votes -->
+<div id="vote-section">
+    <h2>Active Votes</h2>
+    {% for vote in active_votes %}
+        {% if vote['eligible_roles'] == 'everyone' or session.role in ['Admin', 'Vorstand'] %}
+        <div class="stuff-entry">
+            <h3 class="stuff-title">{{ vote["title"] }}</h3>
+            <p><em>{{ vote.get("description", "") }}</em></p>
+            <form action="{{ url_for('vote.vote') }}" method="POST">
+                <input type="hidden" name="vote_id" value="{{ vote["id"] }}">
+                {% for option, count in vote["options"].items() %}
+                <div>
+                    <input type="checkbox" name="selected_options" value="{{ option }}" 
+                           {% if not vote["multiple_choice"] %} onclick="uncheckOthers(this)" {% endif %}>
+                    {{ option }} - {{ count }} votes
+                </div>
+                {% endfor %}
+                <button type="submit" class="btn btn-primary mt-3">Submit Vote</button>
+            </form>
+            {% if session.role in ['Admin', 'Vorstand'] %}
+            <button onclick="markAsDecided('{{ vote['id'] }}')" class="btn btn-secondary mt-2">Decided</button>
+            {% endif %}
+        </div>
+        {% endif %}
+    {% endfor %}
+</div>
+
+<!-- Display Decided Votes -->
+<div id="decided-section">
+    <h2>Decided Votes</h2>
+    {% for vote in decided_votes %}
+        {% if "everyone" in vote["eligible_roles"] or session.role in vote["eligible_roles"] %}
+            <div class="stuff-entry decided">
+                <h3 class="stuff-title">{{ vote["title"] }}</h3>
+                <p><em>{{ vote.get("description", "") }}</em></p>
+                <ul>
+                    {% for option, count in vote["options"].items() %}
+                    <li>{{ option }} - {{ count }} votes</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    {% endfor %}
+</div>
+
+
+<script>
+const formModal = document.getElementById("voteFormModal");
+const openFormButton = document.getElementById("openVoteFormButton");
+const closeButton = document.querySelector(".close-button");
+
+// Show/hide modal
+openFormButton.onclick = function () {
+    formModal.style.display = "block";
+};
+closeButton.onclick = function () {
+    formModal.style.display = "none";
+};
+window.onclick = function (event) {
+    if (event.target === formModal) {
+        formModal.style.display = "none";
+    }
+};
+
+function markAsDecided(voteId) {
+    fetch(`/vote/finish/${voteId}`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload(); // Reloads the page after marking as decided
+            } else {
+                alert("Failed to mark as decided.");
+            }
+        });
+}
+
+// Generate fields for options based on selected number
+function generateOptionFields() {
+    const numOptions = document.getElementById("num_options").value;
+    const optionFieldsContainer = document.getElementById("option-fields");
+    optionFieldsContainer.innerHTML = "";  // Clear previous fields
+    for (let i = 1; i <= numOptions; i++) {
+        const inputField = document.createElement("input");
+        inputField.type = "text";
+        inputField.name = `option_${i}`;
+        inputField.placeholder = `Option ${i}`;
+        inputField.classList.add("form-control", "mb-2");
+        optionFieldsContainer.appendChild(inputField);
+    }
+}
+
+// Toggle choice fields based on multiple choice selection
+function toggleChoiceFields() {
+    const multipleChoice = document.getElementById("multiple_choice").checked;
+    document.getElementById("num_options").disabled = !multipleChoice;
+}
+</script>
+
+<style>
+.modal { display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0, 0, 0, 0.4); }
+.modal-content { background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 600px; border-radius: 8px; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; }
+.close-button { background: none; border: none; font-size: 1.5em; cursor: pointer; margin-left: auto; }
+.stuff-entry { width: 60%; margin: 20px auto; padding: 15px; border: 1px solid #ddd; border-radius: 5px; text-align: center; background-color: #043368c9; color: antiquewhite; }
+.stuff-title { font-size: 24px; font-weight: bold; }
+.stuff-entry.decided { background-color: #d3d3d3; color: #777; text-decoration: line-through; }
+</style>
+{% endblock %}

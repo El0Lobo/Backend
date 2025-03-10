@@ -1,0 +1,25 @@
+<div class="modal-header">
+    <h5 class="modal-title" id="addNewsModalLabel">Add News Entry</h5>
+    <button type="button" class="close-button" hx-on="click: this.closest('.modal').classList.remove('show')" aria-label="Close">&times;</button>
+</div>
+<div class="modal-body">
+    <form hx-post="{{ url_for('news.news') }}" hx-target="#news-entries" hx-swap="beforeend" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label for="title" class="form-label">Title:</label>
+            <input type="text" name="title" id="title" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label for="description" class="form-label">Description:</label>
+            <textarea name="description" id="description" rows="5" class="form-control" required></textarea>
+        </div>
+        <div class="mb-3">
+            <label for="weekly" class="form-label">Intern?</label>
+            <input type="checkbox" id="intern" name="intern"><br>
+        </div>
+        <div class="mb-3">
+            <label for="image" class="form-label">Image (optional):</label>
+            <input type="file" name="image" id="image" class="form-control">
+        </div>
+        <button type="submit" class="btn btn-primary">Add News</button>
+    </form>
+</div>

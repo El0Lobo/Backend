@@ -1,0 +1,405 @@
+{% extends "1-admin.html" %}
+
+{% block content %}
+<h1 style="font-size: 58px; text-align: center; margin-top: 20px;">Tür</h1>
+
+<div style="display: flex; justify-content: center; align-items: flex-start; gap: 40px;">
+
+    <!-- Left Column: Guest and Banned Lists -->
+    <div style="width: 300px;">
+        <!-- Guest List Section -->
+        <button style="background-color: #56bd56; font-size: x-large; margin-bottom: 10px;" onclick="toggleGuestDropdown()" class="dropdown-button">
+            Gästeliste <span id="guest-arrow">▼</span>
+        </button>
+        <div id="guest-dropdown" class="dropdown-content">
+            <ul id="guest-list" class="banned-list">
+                {% for guest in guest_data %}
+                <li>
+                    <span>{{ guest.name }} - {{ guest.annotation }}</span>
+                    <button onclick="removeGuest('{{ guest.name }}')" class="checkmark-button">✔</button>
+                </li>
+                {% endfor %}
+            </ul>
+            {% if user.role in ['admin', 'vorstand', 'manager'] %}
+            <button onclick="toggleAddGuestForm()" class="add-button">Gast hinzufügen</button>
+            <button onclick="clearGuestList()" class="clear-button">Clear Guest List</button>
+            <div id="add-guest-form" class="add-form">
+                <label for="guest-name">Name:</label>
+                <input type="text" id="guest-name">
+                <label for="guest-annotation">Anmerkung:</label>
+                <input type="text" id="guest-annotation">
+                <button onclick="submitGuest()" class="submit-button">Hinzufügen</button>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Banned List Section -->
+        <button style="background-color: #752525; font-size: x-large; margin-top: 10px;" onclick="toggleBannedDropdown()" class="dropdown-button">
+            Ungebetene Gäste <span id="banned-arrow">▼</span>
+        </button>
+        <div id="banned-dropdown" class="dropdown-content">
+            <ul id="banned-list" class="banned-list">
+                {% for banned in banned_data %}
+                <li>
+                    <span>{{ banned.name }} - {{ banned.reason }}</span>
+                    <a href="{{ banned.social_link }}" target="_blank">Social</a>
+                    {% if user.role in ['admin', 'vorstand'] %}
+                    <button onclick="removeBanned('{{ banned.name }}')" class="delete-button">X</button>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% if user.role in ['admin', 'vorstand', 'manager'] %}
+            <button onclick="toggleAddBannedForm()" class="add-button">Unwillkommene Person hinzufügen</button>
+            <div id="add-banned-form" class="add-form">
+                <label for="banned-name">Name:</label>
+                <input type="text" id="banned-name">
+                <label for="banned-reason">Grund:</label>
+                <input type="text" id="banned-reason">
+                <label for="banned-social-link">Link zu Social Media:</label>
+                <input type="url" id="banned-social-link">
+                <button onclick="submitBannedPerson()" class="submit-button">Hinzufügen</button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Center Column: Counter Container -->
+    <div class="counter-container" style="position: relative;">
+        <p style="font-size: 1.5em; margin: 0;">Maximale Kapazität: 180</p>
+        <p style="font-size: 1.5em; margin: 0;">Aktuelle Anzahl Personen:</p>
+
+        <!-- Large counter display -->
+        <div id="counter" class="counter-display">0</div>
+
+        <!-- IN and OUT buttons -->
+        <div class="button-group">
+            <button onclick="addPerson()" class="counter-button in-button">
+                <img src="{{ url_for('static', filename='IN.png') }}" alt="Person kommt rein">
+            </button>
+            <button onclick="removePerson()" class="counter-button out-button">
+                <img src="{{ url_for('static', filename='OUT.png') }}" alt="Person geht raus">
+            </button>
+        </div>
+
+        <p style="font-size: 1.5em; margin-top: 20px;">Eintrittspreis: 10€</p>
+
+        <!-- Reset button -->
+        <button onclick="resetCounter()" class="reset-button">
+            &#x21bb; <!-- Reload icon symbol -->
+        </button>
+    </div>
+        <!-- Right Column: Clock -->
+        <div style="width: 300px; text-align: right; font-size: 4em; font-weight: bold;text-shadow: 0 0 5px rgb(236, 221, 191), 0 0 10px rgb(236, 221, 191), 0 0 15px rgb(236, 221, 191), 0 0 20px rgb(236, 221, 191);">
+            <div id="clock"></div>
+        </div>
+</div>
+
+<style>
+    /* Container and layout */
+    .counter-container {
+        background-color: rgba(0, 0, 51, 0.8);
+        padding: 30px;
+        border-radius: 10px;
+        text-align: center;
+        color: white;
+        width: 300px;
+    }
+
+    .counter-display {
+        font-size: 5em;
+        font-weight: bold;
+        margin: 20px 0;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+    }
+
+    /* Button styling with feedback */
+    .counter-button {
+        background-color: #d2c29bb2;
+        cursor: pointer;
+        transition: transform 0.1s ease, opacity 0.1s ease;
+        margin: 10px;
+        border-radius: 16px;
+        padding: 5px;
+    }
+
+    .counter-button img {
+        width: 80px;
+        height: 80px;
+    }
+
+    .counter-button:hover img {
+        opacity: 0.8;
+    }
+
+    .counter-button:active {
+        transform: scale(0.95);
+    }
+
+    /* Dropdown styling */
+    .dropdown-button {
+        background-color: #f0f0f0;
+        border: none;
+        padding: 10px;
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+
+    .dropdown-content {
+        display: none;
+        margin-top: 10px;
+        background-color: #fff;
+        border-radius: 5px;
+        padding: 10px;
+        color: black;
+    }
+
+    .banned-list {
+        list-style-type: none;
+        padding: 0;
+    }
+
+    /* Add person form */
+    .add-button,
+    .submit-button,
+    .clear-button {
+        background-color: #e0e0e0;
+        border: none;
+        padding: 10px;
+        width: 100%;
+        margin-top: 10px;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+
+    .add-form {
+        display: none;
+        margin-top: 10px;
+    }
+
+    .add-form label {
+        display: block;
+        margin-top: 10px;
+        font-weight: bold;
+    }
+
+    .add-form input {
+        width: 100%;
+        padding: 8px;
+        margin-top: 5px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+    /* Style for checkmark and delete buttons */
+    .checkmark-button,
+    .delete-button {
+        background: none;
+        border: none;
+        font-size: 1.2em;
+        cursor: pointer;
+        color: #555;
+        margin-left: 10px;
+    }
+
+    .checkmark-button:hover {
+        color: green;
+    }
+
+    .delete-button:hover {
+        color: red;
+    }
+
+    .reset-button {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        background: none;
+        border: none;
+        font-size: 1.8em;
+        cursor: pointer;
+        color: #888;
+        transition: color 0.2s ease;
+    }
+
+    .reset-button:hover {
+        color: #000;
+    }
+</style>
+
+<script>
+    // Initialize count from local storage if available
+    let currentCount = localStorage.getItem("currentCount") ? parseInt(localStorage.getItem("currentCount")) : 0;
+
+
+    function updateCounterDisplay() {
+        document.getElementById("counter").textContent = currentCount;
+        // Save to local storage
+        localStorage.setItem("currentCount", currentCount);
+    }
+
+    function addPerson() {
+        if (currentCount < 180) {
+            currentCount++;
+            updateCounterDisplay();
+        } else {
+            alert("Maximale Kapazität erreicht!");
+        }
+    }
+
+    function removePerson() {
+        if (currentCount > 0) {
+            currentCount--;
+            updateCounterDisplay();
+        }
+    }
+
+    function toggleGuestDropdown() {
+        const dropdown = document.getElementById("guest-dropdown");
+        const arrow = document.getElementById("guest-arrow");
+        dropdown.style.display = dropdown.style.display === "none" ? "block" : "none";
+        arrow.textContent = dropdown.style.display === "none" ? "▼" : "▲";
+    }
+
+    function toggleBannedDropdown() {
+        const dropdown = document.getElementById("banned-dropdown");
+        const arrow = document.getElementById("banned-arrow");
+        dropdown.style.display = dropdown.style.display === "none" ? "block" : "none";
+        arrow.textContent = dropdown.style.display === "none" ? "▼" : "▲";
+    }
+
+    function toggleAddGuestForm() {
+        const form = document.getElementById("add-guest-form");
+        form.style.display = form.style.display === "none" ? "block" : "none";
+    }
+
+    function toggleAddBannedForm() {
+        const form = document.getElementById("add-banned-form");
+        form.style.display = form.style.display === "none" ? "block" : "none";
+    }
+
+    function submitGuest() {
+        const name = document.getElementById("guest-name").value;
+        const annotation = document.getElementById("guest-annotation").value;
+
+        if (name && annotation) {
+            fetch("/add_guest", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, annotation })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("Guest added to the list");
+                        location.reload();
+                    } else {
+                        alert("Error adding guest");
+                    }
+                })
+                .catch(error => console.error("Error:", error));
+        } else {
+            alert("Please fill in all fields.");
+        }
+    }
+
+    function submitBannedPerson() {
+        const name = document.getElementById("banned-name").value;
+        const reason = document.getElementById("banned-reason").value;
+        const socialLink = document.getElementById("banned-social-link").value;
+
+        if (name && reason) {
+            fetch("/add_banned", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, reason, social_link: socialLink })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("Person added to banned list");
+                        location.reload();
+                    } else {
+                        alert("Error adding person");
+                    }
+                })
+                .catch(error => console.error("Error:", error));
+        } else {
+            alert("Please fill in all fields.");
+        }
+    }
+
+    function removeGuest(name) {
+        fetch(`/remove_guest/${name}`, {
+            method: "DELETE"
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert("Error removing guest");
+                }
+            })
+            .catch(error => console.error("Error:", error));
+    }
+
+    function clearGuestList() {
+        if (confirm("Are you sure you want to clear the entire guest list?")) {
+            fetch("/clear_guest_list", {
+                method: "DELETE"
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        location.reload();
+                    } else {
+                        alert("Error clearing guest list");
+                    }
+                })
+                .catch(error => console.error("Error:", error));
+        }
+    }
+
+    function removeBanned(name) {
+        fetch(`/remove_banned/${name}`, {
+            method: "DELETE"
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert("Error removing banned person");
+                }
+            })
+            .catch(error => console.error("Error:", error));
+    }
+
+    function resetCounter() {
+        currentCount = 0;
+        updateCounterDisplay();
+        alert("Counter has been reset.");
+    }
+    function updateClock() {
+        const now = new Date();
+        document.getElementById("clock").textContent = now.toLocaleTimeString("de-DE", { timeZone: 'Europe/Berlin' });
+    }
+
+    setInterval(updateClock, 1000); // Update clock every second
+
+    updateCounterDisplay();
+</script>
+
+{% endblock %}

@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTMX Kalender mit Feiertagen</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.7/main.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+    <style>
+        #calendar {
+            max-width: 900px;
+            margin: 40px auto;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border: 1px solid #ccc;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        .modal.active {
+            display: block;
+        }
+        .holiday-event {
+            background-color: lightgreen !important;
+            color: black;
+            opacity: 0.3;
+            position: relative;
+        }
+        .holiday-event .fc-event-title {
+            color: black;
+            font-weight: bold;
+            opacity: 1;
+        }
+        .custom-event {
+            background-color: lightblue;
+            color: black;
+            position: relative;
+            padding-top: 20px;
+        }
+        .event-controls {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            display: flex;
+            gap: 5px;
+        }
+        .event-controls button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 12px; /* Smaller icon size */
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- Button to open the event creation modal -->
+<button onclick="toggleModal()" class="create-event-button">Create New Event</button>
+
+<div id="calendar"></div>
+
+<!-- Modal for creating or editing an event -->
+<div id="eventModal" class="modal">
+    <span class="close" onclick="toggleModal()">×</span>
+    <form id="eventForm">
+        <input type="hidden" id="event_id" name="event_id">
+
+        <label for="public_event">Öffentliche Veranstaltung?</label>
+        <select id="public_event" name="public_event" required>
+            <option value="Public">Öffentlich</option>
+            <option value="Internal">Intern</option>
+        </select><br>
+
+        <label for="schema_type">Art der Veranstaltung (Schema.org)</label>
+        <select id="schema_type" name="schema_type" required>
+            <option value="MusicEvent">Musikveranstaltung</option>
+            <option value="SocialEvent">Gesellschaftliche Veranstaltung</option>
+            <option value="EducationEvent">Bildungsveranstaltung</option>
+            <!-- Add other Schema.org event types as needed -->
+        </select><br>
+
+        <label for="event_name">Name der Veranstaltung:</label>
+        <input type="text" id="event_name" name="event_name" required><br>
+
+        <label for="event_date">Datum:</label>
+        <input type="date" id="event_date" name="event_date" required><br>
+
+        <label for="num_people_per_shift">Anzahl Personen pro Schicht:</label>
+        <input type="number" id="num_people_per_shift" name="num_people_per_shift" min="1" required><br>
+
+        <label for="theke_shift">Thekenschicht benötigt?</label>
+        <input type="checkbox" id="theke_shift" name="theke_shift"><br>
+
+        <label for="door_shift">Türschicht benötigt?</label>
+        <input type="checkbox" id="door_shift" name="door_shift"><br>
+
+        <input type="submit" value="Eintrag hinzufügen">
+    </form>
+</div>
+
+<script>
+    let calendar;
+    let currentEvent = null;
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const calendarEl = document.getElementById('calendar');
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            locale: 'de',
+            firstDay: 1,
+            initialView: 'dayGridMonth',
+            events: async function (fetchInfo, successCallback, failureCallback) {
+                try {
+                    const response = await fetch('https://feiertage-api.de/api/?jahr=2024&nur_land=BW');
+                    const data = await response.json();
+                    const holidayEvents = Object.keys(data).map(key => ({
+                        title: key,
+                        start: data[key].datum,
+                        className: 'holiday-event'  // Custom class for holiday styling
+                    }));
+                    successCallback(holidayEvents);
+                } catch (error) {
+                    console.error(error);
+                    failureCallback(error);
+                }
+            },
+            eventDidMount: function(info) {
+                if (info.event.extendedProps.isCustomEvent) {
+                    const controls = document.createElement('div');
+                    controls.className = 'event-controls';
+
+                    const editButton = document.createElement('button');
+                    editButton.innerHTML = '✏️';
+                    editButton.onclick = function(event) {
+                        event.stopPropagation();
+                        openEditModal(info.event);
+                    };
+
+                    const deleteButton = document.createElement('button');
+                    deleteButton.innerHTML = '❌';
+                    deleteButton.onclick = function(event) {
+                        event.stopPropagation();
+                        info.event.remove();
+                    };
+
+                    controls.appendChild(editButton);
+                    controls.appendChild(deleteButton);
+                    info.el.prepend(controls);  // Place controls at the top of the event element
+                }
+            },
+            eventContent: function(info) {
+                if (info.event.extendedProps.isCustomEvent) {
+                    const title = document.createElement('div');
+                    title.innerText = info.event.title;
+
+                    const type = document.createElement('div');
+                    type.innerText = `Type: ${info.event.extendedProps.schemaType}`;
+
+                    const shiftsContainer = document.createElement('div');
+                    const numPeoplePerShift = info.event.extendedProps.numPeoplePerShift;
+                    if (info.event.extendedProps.thekeShift) {
+                        shiftsContainer.appendChild(createShiftCheckboxes('Theke', numPeoplePerShift));
+                    }
+                    if (info.event.extendedProps.doorShift) {
+                        shiftsContainer.appendChild(createShiftCheckboxes('Tür', numPeoplePerShift));
+                    }
+
+                    return { domNodes: [title, type, shiftsContainer] };
+                } else if (info.event.classNames.includes('holiday-event')) {
+                    const title = document.createElement('div');
+                    title.className = 'fc-event-title';
+                    title.innerText = info.event.title;
+                    return { domNodes: [title] };
+                } else {
+                    return { domNodes: [] };
+                }
+            }
+        });
+        calendar.render();
+
+        document.getElementById('eventForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const newEvent = {
+                title: document.getElementById('event_name').value,
+                start: document.getElementById('event_date').value,
+                className: 'custom-event',
+                extendedProps: {
+                    isCustomEvent: true,
+                    publicEvent: document.getElementById('public_event').value,
+                    schemaType: document.getElementById('schema_type').value,
+                    numPeoplePerShift: parseInt(document.getElementById('num_people_per_shift').value),
+                    thekeShift: document.getElementById('theke_shift').checked,
+                    doorShift: document.getElementById('door_shift').checked,
+                }
+            };
+
+            if (currentEvent) {
+                currentEvent.setProp('title', newEvent.title);
+                currentEvent.setStart(newEvent.start);
+                currentEvent.setExtendedProp('publicEvent', newEvent.extendedProps.publicEvent);
+                currentEvent.setExtendedProp('schemaType', newEvent.extendedProps.schemaType);
+                currentEvent.setExtendedProp('numPeoplePerShift', newEvent.extendedProps.numPeoplePerShift);
+                currentEvent.setExtendedProp('thekeShift', newEvent.extendedProps.thekeShift);
+                currentEvent.setExtendedProp('doorShift', newEvent.extendedProps.doorShift);
+            } else {
+                calendar.addEvent(newEvent);
+            }
+
+            toggleModal();
+            currentEvent = null;
+        });
+    });
+
+    function toggleModal() {
+        const modal = document.getElementById('eventModal');
+        modal.classList.toggle('active');
+    }
+
+    function openEditModal(event) {
+        currentEvent = event;
+
+        document.getElementById('event_name').value = event.title;
+        document.getElementById('event_date').value = event.startStr;
+        document.getElementById('public_event').value = event.extendedProps.publicEvent;
+        document.getElementById('schema_type').value = event.extendedProps.schemaType;
+        document.getElementById('num_people_per_shift').value = event.extendedProps.numPeoplePerShift;
+        document.getElementById('theke_shift').checked = event.extendedProps.thekeShift;
+        document.getElementById('door_shift').checked = event.extendedProps.doorShift;
+
+        toggleModal();
+    }
+
+    function createShiftCheckboxes(shiftType, count) {
+        const container = document.createElement('div');
+        container.innerText = `${shiftType}: `;
+        
+        for (let i = 0; i < count; i++) {
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.name = `${shiftType.toLowerCase()}_shift_${i + 1}`;
+            container.appendChild(checkbox);
+        }
+
+        return container;
+    }
+</script>
+
+</body>
+</html>

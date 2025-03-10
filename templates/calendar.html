@@ -1,0 +1,393 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/event.css') }}">
+<script src="{{ url_for('static', filename='js/event.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/luxon/build/global/luxon.min.js"></script>
+{% endblock %}
+<h1>Schichtplan</h1>
+
+
+<!-- Button to open the event creation modal -->
+<button onclick="toggleModal()" class="create-event-button">Create New Event</button>
+
+
+<!-- Calendar Display -->
+<div id="calendar">
+    {% for day in days %}
+    <div class="calendar-day">
+        <h3>{{ day.date }}</h3>
+        {% for entry in day.entries %}
+            {% include 'calendar_entry.html' with context %}
+        {% endfor %}
+    </div>
+    {% endfor %}
+</div>
+<div class="event-badge-container">
+    <p class="event-badge proposed">Vorgeschlagene</p>
+    <p class="event-badge intern">Intern</p>
+    <p class="event-badge recurring">Regelmässig</p>
+    <p class="event-badge normal">Event</p>
+    <p class="event-badge proposed-intern">Interne Vorgeschlagene</p>
+</div>
+<div class="overlay" id="overlay" onclick="toggleModal()"></div>
+
+<!-- Suggested Events Section -->
+<h2>Vorgerschlagene Events</h2>
+<div class="tile-list">
+    {% for event in events %}
+    {% if event.suggested %}
+    <div class="tile-proposed">
+        <!-- Event Image -->
+        {% if event.image_path %}
+        <img src="{{ url_for('static', filename='uploads/' + event.image_path) }}" alt="{{ event.name }}" class="event-image" width="100">
+        {% endif %}
+
+        <!-- Event Name and Description -->
+        <h3>{{ event.name }}</h3>
+        <p>{{ event.description }}</p>
+
+        <!-- Event Date -->
+        <p><strong>Datum:</strong> {{ event.date | german_date }}</p>
+        
+        <!-- Entry Time -->
+        {% if event.entry_time %}
+        <p><strong>Einlasszeit:</strong> {{ event.entry_time }}</p>
+        {% endif %}
+
+        <!-- Event End Time -->
+        {% if event.end_time %}
+        <p><strong>Ende:</strong> {{ event.end_time }}</p>
+        {% endif %}
+
+        <!-- Entry Price -->
+        {% if event.price and event.price > 0 %}
+        <p><strong>Eintritt:</strong> {{ event.price }} €</p>
+        {% else %}
+        <p><strong>Eintritt:</strong> Kostenlos</p>
+        {% endif %}
+
+        <!-- Location -->
+        {% if event.location %}
+        <p><strong>Ort:</strong> {{ event.location }}</p>
+        {% endif %}
+
+        <!-- Edit and Delete Buttons -->
+        <button onclick="editEvent({{ event.id }})">Edit</button>
+        <form action="{{ url_for('events.delete_event', event_id=event.id) }}" method="POST" style="display: inline;">
+            <button type="submit">Delete</button>
+        </form>
+    </div>
+    {% endif %}
+    {% endfor %}
+</div>
+
+<!-- Weekly and Monthly Events Section -->
+<h2>Regelmässige Events</h2>
+<div class="tile-list">
+    {% for event in events %}
+    {% if event.weekly or event.monthly %}
+    <div class="tile 
+        {% if event.weekly %}weekly-event{% endif %} 
+        {% if event.monthly %}monthly-event{% endif %}">
+        <!-- Event Image -->
+        {% if event.image_path %}
+        <img src="{{ url_for('static', filename='uploads/' + event.image_path) }}" alt="{{ event.name }}" class="event-image" width="100">
+        {% endif %}
+
+        <!-- Event Name and Description -->
+        <h3>{{ event.name }}</h3>
+        <p>{{ event.description }}</p>
+
+        <!-- Entry Time -->
+        {% if event.entry_time %}
+        <p><strong>Einlasszeit:</strong> {{ event.entry_time }}</p>
+        {% endif %}
+
+        <!-- Event End Time -->
+        {% if event.end_time %}
+        <p><strong>Ende:</strong> {{ event.end_time }}</p>
+        {% endif %}
+
+        <!-- Entry Price -->
+        {% if event.price and event.price > 0 %}
+        <p><strong>Eintritt:</strong> {{ event.price }} €</p>
+        {% else %}
+        <p><strong>Eintritt:</strong> Kostenlos</p>
+        {% endif %}
+
+        <!-- Location -->
+        {% if event.location %}
+        <p><strong>Ort:</strong> {{ event.location }}</p>
+        {% endif %}
+
+        <!-- Edit and Delete Buttons -->
+        <button onclick="editEvent({{ event.id }})">Edit</button>
+        <form action="{{ url_for('events.delete_event', event_id=event.id) }}" method="POST" style="display: inline;">
+            <button type="submit">Delete</button>
+        </form>
+    </div>
+    {% endif %}
+    {% endfor %}
+</div>
+
+<!-- Non-Recurring Events Section -->
+<h2>Nächste Events</h2>
+<div class="tile-list">
+    {% for event in events %}
+    {% if not event.weekly and not event.monthly and not event.suggested and not event.in_past %}
+    <div class="tile next-event 
+        {% if event.intern %}intern-event{% endif %} 
+        {% if event.suggested %}suggested-event{% endif %}">
+        <!-- Event Image -->
+        {% if event.image_path %}
+        <img src="{{ url_for('static', filename='uploads/' ~ event.image_path) }}" alt="{{ event.name }}" class="event-image">
+        {% endif %}
+
+        <!-- Event Name and Description -->
+        <h3>{{ event.name }}</h3>
+        <p>{{ event.description }}</p>
+
+        <!-- Event Date -->
+        <p><strong>Datum:</strong> {{ event.date | german_date }}</p>
+
+        <!-- Entry Time -->
+        {% if event.entry_time %}
+        <p><strong>Einlasszeit:</strong> {{ event.entry_time }}</p>
+        {% endif %}
+
+        <!-- Event End Time -->
+        {% if event.end_time %}
+        <p><strong>Ende:</strong> {{ event.end_time }}</p>
+        {% endif %}
+
+        <!-- Entry Price -->
+        {% if event.price and event.price > 0 %}
+        <p><strong>Eintritt:</strong> {{ event.price }} €</p>
+        {% else %}
+        <p><strong>Eintritt:</strong> Kostenlos</p>
+        {% endif %}
+
+        <!-- Location -->
+        {% if event.location %}
+        <p><strong>Ort:</strong> {{ event.location }}</p>
+        {% endif %}
+
+        <!-- Edit and Delete Buttons -->
+        <button onclick="editEvent({{ event.id }})">Edit</button>
+        <form action="{{ url_for('events.delete_event', event_id=event.id) }}" method="POST" style="display: inline;">
+            <button type="submit">Delete</button>
+        </form>
+    </div>
+    {% endif %}
+    {% endfor %}
+</div>
+
+
+<!-- Past Events Section -->
+<h2>Vergangene Events</h2>
+<div class="tile-list">
+    {% for event in events %}
+    {% if event.in_past and not event.weekly and not event.monthly %}
+    <div class="tile-past 
+        {% if event.intern %}intern-event{% endif %} 
+        {% if event.suggested %}suggested-event{% endif %}">
+        <!-- Event Image -->
+        {% if event.image_path %}
+        <img src="{{ url_for('static', filename='uploads/' + event.image_path) }}" alt="{{ event.name }}" class="event-image" width="100">
+        {% endif %}
+
+        <!-- Event Name and Description -->
+        <h3>{{ event.name }}</h3>
+        <p>{{ event.description }}</p>
+
+        <!-- Event Date -->
+        <p><strong>Datum:</strong> {{ event.date | german_date }}</p>
+
+        <!-- Entry Time -->
+        {% if event.entry_time %}
+        <p><strong>Einlasszeit:</strong> {{ event.entry_time }}</p>
+        {% endif %}
+
+        <!-- Event End Time -->
+        {% if event.end_time %}
+        <p><strong>Ende:</strong> {{ event.end_time }}</p>
+        {% endif %}
+
+        <!-- Entry Price -->
+        {% if event.price and event.price > 0 %}
+        <p><strong>Eintritt:</strong> {{ event.price }} €</p>
+        {% else %}
+        <p><strong>Eintritt:</strong> Kostenlos</p>
+        {% endif %}
+
+        <!-- Location -->
+        {% if event.location %}
+        <p><strong>Ort:</strong> {{ event.location }}</p>
+        {% endif %}
+
+        <!-- Edit and Delete Buttons -->
+        <button onclick="editEvent({{ event.id }})">Edit</button>
+        <form action="{{ url_for('events.delete_event', event_id=event.id) }}" method="POST" style="display: inline;">
+            <button type="submit">Delete</button>
+        </form>
+    </div>
+    {% endif %}
+    {% endfor %}
+</div>
+
+<!-- Event Details Modal -->
+<div id="eventDetailsModal" class="modal">
+    <span class="close" onclick="closeEventDetailsModal()">×</span>
+    <div id="eventDetailsContent">
+        <!-- Event details will be dynamically loaded here -->
+    </div>
+</div>
+
+<!-- Event Creation/Editing Modal -->
+<div id="eventModal" class="modal">
+    <span class="close" onclick="toggleModal()">×</span>
+    <form id="eventForm" action="{{ url_for('events.add_event') }}" method="POST" enctype="multipart/form-data">
+        <input type="hidden" id="event_id" name="event_id">
+
+        <!-- Proposal and Internal Event -->
+        <label for="proposed">Vorschlag?</label>
+        <input type="checkbox" id="proposed" name="proposed"><br>
+
+        <label for="intern">Interne Veranstaltung?</label>
+        <input type="checkbox" id="intern" name="intern"><br>
+
+        <!-- Event Type Selection -->
+        <label for="schema_type">Art der Veranstaltung (Schema.org)</label>
+        <select id="schema_type" name="schema_type" required onchange="toggleEventFields()">
+            <option value="ThemedNight">Themenabend (z.B. Queer Night, Punk Night)</option>
+            <option value="MusicEvent">Live-Musik</option>
+            <option value="SocialEvent">Gesellschaftliche Veranstaltung</option>
+            <option value="EducationEvent">Bildungsveranstaltung</option>
+            <option value="ArtEvent">Kunstveranstaltung</option>
+            <option value="WorkshopEvent">Workshop</option>
+            <option value="LectureEvent">Vortrag</option>
+            <option value="TheaterEvent">Theaterveranstaltung</option>
+            <option value="Festival">Festival</option>
+            <option value="ScreeningEvent">Filmvorführung</option>
+            <option value="LiteraryEvent">Literaturveranstaltung</option>
+            <option value="ConferenceEvent">Konferenz</option>
+            <option value="ChildrenEvent">Kinderveranstaltung</option>
+            <option value="ExhibitionEvent">Ausstellung</option>
+            <option value="HolidayBreak">Geschlossen (Sommerpause)</option>
+            <option value="Putzschicht">Putzschicht</option>
+            <option value="none">Nichts davon</option>
+        </select><br>
+
+        <!-- Internal Label -->
+        <label for="intern_event_type">Internes Label</label>
+        <select id="intern_event_type" name="intern_event_type" required>
+            <option value="Konzert">Konzert</option>
+            <option value="DJ">DJ</option>
+            <option value="Kunstkneipe">Kunstkneipe</option>
+            <option value="Queerkneipe">Queerkneipe</option>
+            <option value="Infokneipe">Infokneipe</option>
+            <option value="Spieleabend">Spieleabend</option>
+            <option value="PunkKneipe">Punk Kneipe</option>
+            <option value="Labor">Das Labor</option>
+            <option value="Sommerpause">Geschlossen (Sommerpause)</option>
+            <option value="Vorstandssitzung">Vorstandssitzung</option>
+            <option value="Vollversammlung">Vollversammlung</option>
+            <option value="Putzschicht">Putzschicht</option>
+            <option value="none">Nichts davon</option>
+        </select><br>
+
+        <!-- General Event Fields -->
+        <label for="event_name">Name der Veranstaltung:</label>
+        <input type="text" id="event_name" name="event_name" required><br>
+
+        <label for="description">Beschreibung:</label>
+        <textarea id="description" name="description" rows="4" placeholder="Schreib was Interessantes"
+            required></textarea><br>
+
+        <label for="event_image">Bild hochladen:</label>
+        <input type="file" id="event_image" name="event_image" accept="image/*">
+
+        <!-- Fields for Holiday Breaks -->
+        <div id="holiday_break_fields" style="display: none;">
+            <label for="closed_from">Geschlossen von:</label>
+            <input type="date" id="closed_from" name="closed_from"><br>
+
+            <label for="closed_to">Geschlossen bis:</label>
+            <input type="date" id="closed_to" name="closed_to"><br>
+        </div>
+
+        <!-- Standard Event Fields -->
+        <div id="standard_event_fields">
+            <label for="event_date">Datum:</label>
+            <input type="date" id="event_date" name="event_date" required><br>
+
+            <label for="einlasszeit">Einlasszeit:</label>
+            <input type="time" id="einlasszeit" name="einlasszeit"><br>
+
+            <label for="end">Veranstaltungsende:</label>
+            <input type="time" id="end" name="end"><br>
+
+            <label for="price">Preis in €:</label>
+            <input type="text" id="price" name="price" placeholder="z.B. 10€"><br>
+
+            <label for="location">Ort:</label>
+            <input type="text" id="location" name="location" placeholder="falls woanders"><br>
+        </div>
+
+        <!-- Music/DJ Fields -->
+        <div id="music_dj_fields" style="display: none;">
+            <label for="konzertstart">Konzertstart:</label>
+            <input type="time" id="konzertstart" name="konzertstart"><br>
+
+            <label for="performerFields">Performer (Name und Genre):</label>
+            <div id="performerFields"></div>
+        </div>
+
+        <!-- Recurring and Shift Settings -->
+        <label for="num_people_per_shift">Anzahl Personen pro Schicht:</label>
+        <input type="number" id="num_people_per_shift" name="num_people_per_shift" min="1" value="2"><br>
+
+        <label for="theke_shift">Thekenschicht benötigt?</label>
+        <input type="checkbox" id="theke_shift" name="theke_shift"><br>
+
+        <label for="door_shift">Türschicht benötigt?</label>
+        <input type="checkbox" id="door_shift" name="door_shift"><br>
+
+        <label for="double_shift">Doppelschicht?</label>
+        <input type="checkbox" id="double_shift" name="double_shift"><br>
+
+        <label for="weekly">Wöchentlich?</label>
+        <input type="checkbox" id="weekly" name="weekly"><br>
+
+        <label for="monthly">Monatlich?</label>
+        <input type="checkbox" id="monthly" name="monthly"><br>
+
+        <label for="replace">anderes Event überschreiben?</label>
+        <input type="checkbox" id="replace" name="replace"><br>
+
+        <button type="submit">Eintrag hinzufügen</button>
+    </form>
+</div>
+
+<div id="assignModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <h2>Assign Shift</h2>
+        <label for="shift-select">Select Shift:</label>
+        <select id="shift-select"></select>
+
+        <label for="user-select">Select User:</label>
+        <select id="user-select"></select>
+
+        <button onclick="assignShift()">Assign</button>
+        <button onclick="closeAssignModal()">Cancel</button>
+    </div>
+</div>
+
+  
+<style>
+
+
+</style>
+{% endblock %}

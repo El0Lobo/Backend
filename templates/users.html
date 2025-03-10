@@ -1,0 +1,380 @@
+{% extends "base.html" %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/users.css') }}">
+<script src="{{ url_for('static', filename='js/users.js') }}"></script>
+{% endblock %}
+{% block content %}
+<h1>Mitglieder</h1>
+<p>You are in the protected admin page.</p>
+
+<!-- Button to open the form popup -->
+{% if session.role in ['Admin', 'Vorstand'] %}
+<button id="openFormButton">Add User</button>
+{% endif %}
+
+<!-- Modal for the user form -->
+<div id="formModal" class="modal">
+  <div class="modal-content">
+    <span class="close-button">&times;</span>
+    <form action="{{ url_for('users.users') }}" method="post" id="userForm">
+      <input type="hidden" id="user_id" name="user_id">
+      <h2 id="formTitle">Create User</h2>
+
+      <label for="name">Name:</label>
+      <input type="text" id="name" name="name" required><br><br>
+
+      <label for="nickname">Nickname:</label>
+      <input type="text" id="nickname" name="nickname" required><br><br>
+
+      <label for="role">Rolle:</label>
+      <select id="role" name="role">
+        <option value="User">Aktiv</option>
+        <option value="Passiv">Passiv</option>
+        <option value="Manager">Manager</option>
+        <option value="Vorstand">Vorstand</option>
+      </select><br><br>
+
+      <label for="birth-date">Geburtstag:</label>
+      <input type="date" id="birth-date" name="birth-date" required /> 
+      <br><br>
+      <div style="position: relative;">
+        <label for="street">Straße:</label>
+        <input type="text" id="street" name="street" required>
+        <div class="autocomplete-container"></div>
+        <label for="number">Nr:</label>
+        <input type="number" id="number" name="number" required><br><br>
+      </div>
+
+      <label for="postcode">PLZ:</label>
+      <input type="number" id="postcode" name="postcode" required>
+
+      <label for="city">Ort:</label>
+      <input type="text" id="city" name="city" required><br><br>
+
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" required><br><br>
+
+      <label for="phone">Telefon:</label>
+      <input type="text" id="phone" name="phone"><br><br>
+
+      <label for="description">Beschreibung:</label><br>
+      <textarea id="description" name="description" rows="5" cols="50"></textarea><br><br>      
+
+      <label for="password">Passwort:</label>
+      <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="********"
+          title="Leave blank to keep the current password."
+      ><br><br>
+      
+
+      <label for="show_email">Email anzeigen:</label>
+      <input type="checkbox" id="show_email" name="show_email"><br><br>
+
+      <label for="show_phone">Telefon anzeigen:</label>
+      <input type="checkbox" id="show_phone" name="show_phone"><br><br>
+
+      <label for="show_birthday">Geburtstag anzeigen:</label>
+      <input type="checkbox" id="show_birthday" name="show_birthday"><br><br>
+
+      <label for="has_key">Schlüssel?</label>
+      <input type="checkbox" id="has_key" name="has_key"><br><br>
+
+      <label for="paid">Mitgliedsbeitrag bezahlt?:</label>
+      <input type="checkbox" id="paid" name="paid"><br> 
+
+      <label for="paid-duration">Bezahlzeitraum:</label>
+      <select id="paid-duration" name="paid-duration">
+          <option value="1">1 Monat</option>
+          <option value="3">Quartal (3 Monate)</option>
+          <option value="12">1 Jahr</option>
+      </select>
+      <input type="date" id="paid-until" name="paid-until"><br><br>
+
+      <label for="patron">Fördermitglied:</label>
+      <input type="checkbox" id="patron" name="patron"><br>
+      
+      <label for="patron-amount">Förderbeitrag:</label>
+      <input type="number" id="patron-amount" name="patron-amount" step="0.01"> 
+      <label for="patron-amount">€</label><br><br>
+
+      <label for="member-since">Mitglied seit:</label>
+      <input type="date" id="member-since" name="member-since" required /> 
+      <br><br>
+
+      <input type="submit" value="Save User">
+    </form>
+  </div>
+</div>
+
+<div id="members-list">
+  <h2>Vorstand</h2>
+  <div class="tile-list">
+    {% for member in users %}
+    {% if member[6] == 'Vorstand' %}
+    <div class="tile">
+      {% if session.role in ['Admin', 'Vorstand'] %}
+      <div class="icon-container">
+        <span class="edit-icon" onclick='openEditForm({{ member|tojson|safe }});'>✏️</span>
+        <a href="{{ url_for('users.delete_user', user_id=member[0]) }}" title="Delete"><span
+            class="delete-icon">❌</span></a>
+      </div>
+      {% endif %}
+      <h3>{{ member[1] }}</h3>
+      {% if member[7] %}<p>Email: {{ member[4] }}</p>{% endif %}
+      {% if member[8] %}<p>Phone: {{ member[3] }}</p>{% endif %}
+      {% if member[9] %}<p class="key-info">🔑 Schlüsselkind</p>{% endif %}
+      {% if session.role in ['Admin', 'Vorstand'] and member[10] %}
+      <p class="key-info">💸 Bezahlt!</p>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+<h2>Aktive Mitglieder</h2>
+<div class="tile-list">
+  {% for member in users %}
+  {% if member[6] in ['User', 'Manager'] %}
+  <div class="tile" 
+        style="background-color: 
+              {% if member[-1] and (session.role in ['Admin', 'Vorstand'] and member[20]) %}
+                #FFD700; /* Highlight color on birthday */
+              {% elif member[6] == 'Manager' %}
+                #d0f0d0cf; /* Manager color */
+              {% else %}
+                #f5f5f5bf; /* Default color */
+              {% endif %}">
+    
+    <!-- Display Happy Birthday only if it's the user's birthday and should be shown -->
+    {% if member[-1] and (session.role in ['Admin', 'Vorstand'] and member[20]) %}
+    <p class="key-info">🎉 Happy Birthday!</p>
+    {% endif %}
+
+    <!-- Display admin controls -->
+    {% if session.role in ['Admin', 'Vorstand'] %}
+    <div class="icon-container">
+      <span class="edit-icon" onclick='openEditForm({{ member|tojson|safe }});'>✏️</span>
+      <a href="{{ url_for('users.delete_user', user_id=member[0]) }}" title="Delete">
+        <span class="delete-icon">❌</span>
+      </a>
+    </div>
+    {% endif %}
+
+    <!-- Display user details -->
+    {% if session.role in ['Admin', 'Vorstand'] %}
+    <h3>{{ member[1] }}</h3>
+    {% endif %}
+
+    <h3>{{ member[2] }}</h3>
+    {% if session.role in ['Admin', 'Vorstand'] %}
+    <p>📧 Email: {{ member[4] }}</p>
+    <p>📱 Phone: {{ member[3] }}</p>
+    {% else %}
+    {% if member[7] %}<p class="key-info">📧 Email: {{ member[4] }}</p>{% endif %}
+    {% if member[8] %}<p class="key-info">📱 Phone: {{ member[3] }}</p>{% endif %}
+    {% endif %}
+    {% if member[23] %}<p class="key-info">📜 Beschreibung: {{ member[23] }}</p>{% endif %}
+    {% if member[9] %}<p class="key-info">🔑 Schlüsselkind</p>{% endif %}
+    {% if member[19] %}
+    <p class="key-info">💸 Bezahlt! (Bis: {{ member[18] or 'Unbekannt' }})</p>
+    {% else %}
+    <p class="key-info">❌ Beitrag ausstehend!</p>
+    {% endif %}
+
+    <!-- Display address if Admin or Vorstand -->
+    {% if member[11] or member[12] or member[13] or member[14] %}
+    {% if session.role in ['Admin', 'Vorstand'] %}
+    <p class="key-info">📍 Adresse: <br>{{ member[11] }} {{ member[12] }},<br> {{ member[14] }} {{ member[13] }}</p>
+    {% endif %}
+    {% endif %}
+
+    <!-- Display birthday if Admin/Vorstand or user allows it -->
+    {% if member[15] %}
+    {% if session.role in ['Admin', 'Vorstand'] or member[20] %}
+    <p class="key-info">🎂 Geburtstag: {{ member[15] }}</p>
+    {% endif %}
+    {% endif %}
+
+    {% if member[16] %}<p class="key-info">🌟 Fördermitglied</p>{% endif %}
+    {% if session.role in ['Admin', 'Vorstand'] %}
+    {% if member[16] and member[17] %}
+    <p class="key-info">💰 Förderbeitrag: {{ member[17] }} €</p>
+    {% endif %}
+    {% endif %}
+
+    {% if member[19] %}
+    <p class="key-info">🗓️ Mitglied seit: {{ member[21] }}</p>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% endfor %}
+</div>
+
+  
+
+  <h2>Passive Mitglieder</h2>
+  <div class="tile-list">
+    {% for member in users %}
+    {% if member[6] == 'Passiv' %}
+    <div class="tile">
+      {% if session.role in ['Admin', 'Vorstand'] %}
+      <div class="icon-container">
+        <span class="edit-icon" onclick='openEditForm({{ member|tojson|safe }});'>✏️</span>
+        <a href="{{ url_for('users.delete_user', user_id=member[0]) }}" title="Delete"><span
+            class="delete-icon">❌</span></a>
+      </div>
+      {% endif %}
+      <h3>{{ member[1] }}</h3>
+      {% if session.role in ['Admin', 'Vorstand'] %}
+      <p>Email: {{ member[4] }}</p>
+      <p>Phone: {{ member[3] }}</p>
+      {% else %}
+      {% if member[7] %}<p>Email: {{ member[4] }}</p>{% endif %}
+      {% if member[8] %}<p>Phone: {{ member[3] }}</p>{% endif %}
+      {% endif %}
+      {% if member[9] %}<p class="key-info">🔑 Schlüsselkind</p>{% endif %}
+      {% if member[10] %}<p class="key-info">💸 Bezahlt!</p>{% endif %}
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+</div>
+<script src="{{ url_for('static', filename='js/users.js') }}"></script>
+
+
+<style>
+  /* Modal styles */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+  }
+
+  .modal-content {
+    background-color: #fefefe;
+    margin: 10% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 600px;
+  }
+
+  .close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+  }
+
+  .close-button:hover,
+  .close-button:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  /* Tile list styles */
+  .tile-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  .tile {
+    position: relative;
+    background-color: #f5f5f5bf;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 200px;
+  }
+
+  .tile h3 {
+    margin-top: 0;
+  }
+
+  /* Edit and Delete icon styles */
+  .icon-container {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+  }
+
+  .edit-icon,
+  .delete-icon {
+    font-size: 0.8em;
+    margin-left: 5px;
+    cursor: pointer;
+  }
+
+  .delete-icon {
+    color: red;
+  }
+
+  .edit-icon:hover {
+    color: #007bff;
+    font-size: 1em;
+  }
+
+  .delete-icon:hover {
+    color: darkred;
+    font-size: 1em;
+  }
+
+  .icon-container a {
+    text-decoration: none;
+    /* Remove underline */
+  }
+
+  .autocomplete-container {
+    position: absolute;
+    top: 100%;
+    /* Directly below the input field */
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    background: white;
+    max-height: 200px;
+    overflow-y: auto;
+    border-radius: 5px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .autocomplete-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+  }
+
+  .autocomplete-item:last-child {
+    border-bottom: none;
+  }
+
+  .autocomplete-item:hover {
+    background-color: #f0f0f0;
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+    /* For Firefox */
+  }
+</style>
+
+
+
+{% endblock %}

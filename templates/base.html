@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>{{ title }}</title>
+  <meta charset="utf-8">
+  <meta name="robots" content="noindex">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5">
+  <link rel="stylesheet" href="static/css/1-admin.css">
+  <script src="static/js/1-admin.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+  {% block header %} {% endblock %}
+</head>
+
+<body>
+  <!-- (A) SIDEBAR -->
+  <div id="pgside">
+    <!-- (A1) BRANDING OR USER -->
+    <div id="pguser" onclick="logoutWithConfirmation()">
+      <input type="hidden" name="logout" value="1">
+      <img src="" id="pguserimg">
+      <div class="txt">
+        <div id="pgusername"></div>
+        <div href="javascript:void(0)" onclick="logoutWithConfirmation()">Logout</div>
+      </div>
+
+
+    </div>
+    <a href="/" class="{{ 'current' if active_page == 'News' else '' }}">
+      <i class="ico">&#128240;</i> <!-- Newspaper icon for News -->
+      <i class="txt">News</i>
+    </a>
+
+    <a href="/events" class="{{ 'current' if active_page == 'Schichtplan' else '' }}">
+      <i class="ico">&#128197;</i> <!-- Calendar icon for Schichtplan -->
+      <i class="txt">Schichtplan</i>
+    </a>
+
+    <a href="/users" class="{{ 'current' if active_page == 'Mitglieder' else '' }}">
+      <i class="ico">&#128101;</i> <!-- Group of people for Mitglieder -->
+      <i class="txt">Mitglieder</i>
+    </a>
+
+    <a href="/bands" class="{{ 'current' if active_page == 'Bands' else '' }}">
+      <i class="ico">&#128205;🎵🎸</i> <!-- Map pin for Booking -->
+      <i class="txt">Bands</i>
+    </a>
+
+    <a href="/tuer" class="{{ 'current' if active_page == 'Tür' else '' }}">
+      <i class="ico">&#128682;</i> <!-- Door icon for Tür -->
+      <i class="txt">Tür</i>
+    </a>
+
+    {% if session.role in ['Admin', 'Vorstand'] %}
+    <a href="/contact" class="{{ 'current' if active_page == 'Credentials' else '' }}">
+      <i class="ico">&#128274;</i> 
+      <i class="txt">Credentials</i>
+    </a>
+    {% endif %}
+
+    <a href="#">
+      <i class="ico">&#128176;</i>
+      <i class="txt">Kasse</i>
+    </a>
+
+    <a href="/stuff" class="{{ 'current' if active_page == 'Stuff' else '' }}">
+      <i class="ico">&#128296;</i> 
+      <i class="txt">Stuff we need</i>
+    </a>
+
+    <a href="/vote" class="{{ 'current' if active_page == 'Vote' else '' }}">
+      <i class="ico">&#128172;</i>
+      <i class="txt">Vote</i>
+    </a>
+
+    <a href="/setup" class="{{ 'current' if active_page == 'Setup' else '' }}">
+      <i class="ico">&#128295;</i> <!-- Wrench icon for Setup -->
+      <i class="txt">Setup</i>
+    </a>
+    <div class="sidebar-footer">
+      <span>Developed by</span>
+      <a href="https://acme-prototypes.com/" class="acme-link">
+        <img src="static/images/ACME (Small).png" alt="ACME">
+      </a>
+    </div>
+  </div>
+
+  <!-- (B) MAIN -->
+  <main id="pgmain">{% block content %} {% endblock %}</main>
+
+  <script>
+    // Function to get JWT data
+    function parseJwt(token) {
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+      } catch (error) {
+        return null;
+      }
+    }
+
+    // Helper function to get cookie value by name
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+
+    // Update user information in the sidebar
+    document.addEventListener("DOMContentLoaded", () => {
+      const jwt = getCookie("JWT");
+      if (jwt) {
+        const user = parseJwt(jwt);
+        if (user && user.data) {
+          // Set the nickname
+          document.getElementById("pgusername").innerText = user.data.nick || user.data.name;
+
+          // Set the role-based image
+          let roleImage = "static/images/user.png"; // Default to user image
+          if (user.data.role === "Admin") {
+            roleImage = "static/images/admin.png";
+          } else if (user.data.role === "vorstand") {
+            roleImage = "static/images/vorstand.png";
+          } else if (user.data.role === "manager") {
+            roleImage = "static/images/manager.png";
+          }
+          document.getElementById("pguserimg").src = roleImage;
+        }
+      }
+    });
+
+    // Logout function with confirmation
+    function logoutWithConfirmation() {
+      if (confirm("Are you sure you want to logout?")) {
+        logout();
+      }
+    }
+
+    // Logout function
+    function logout() {
+      fetch("/out", { method: "POST" })
+        .then(response => {
+          if (response.ok) {
+            alert("Logged out successfully!");
+            location.href = "/login";  // Redirect to login page after logout
+          } else {
+            alert("Failed to log out.");
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          alert("Error - " + err.message);
+        });
+    }
+  </script>
+</body>
+
+</html>
