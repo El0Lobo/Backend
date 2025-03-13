@@ -1,14 +1,14 @@
 {% extends 'base.html' %}
 {% block content %}
-<h1>Register</h1>
 
 <!-- Wrap both sections in a flex container -->
 <div id="registerPage" style="display: flex; flex-direction: row; gap: 20px;">
-    
+
     <!-- Register (Cart) Section - Will be on the Left -->
     <div id="registerContainer" style="width: 30%;">
-        <h2>Register</h2>
-        <table id="cartTable" border="1" cellspacing="0" cellpadding="5">
+        <h2>Cart</h2>
+        <table id="cartTable" border="1" cellspacing="0" cellpadding="5"
+            style="background-color: #f0f0f0; border-radius: 10px;">
             <thead>
                 <tr>
                     <th>Item</th>
@@ -23,9 +23,34 @@
                 <!-- Cart items will appear here -->
             </tbody>
         </table>
-        <h3 id="finalPrice">Final Price: €0.00</h3>
-        <button onclick="clearCart()">Clear Cart</button>
-        <button onclick="finishTransaction()">Finish Transaction</button>
+        <h3 id="finalPrice" style="
+        background-color: #f0f0f0; 
+        border-radius: 10px; 
+        padding: 10px;
+        max-width: fit-content;
+        min-width: fit-content;
+    ">Final Price: 0 €</h3>
+
+        <button onclick="finishTransaction()" style="
+    background-color: #28a745; 
+    color: white; 
+    border: none; 
+    padding: 10px 15px; 
+    border-radius: 5px;
+    cursor: pointer;
+">Finish Transaction</button>
+
+        <button onclick="clearCart()" style="
+    background-color: #dc3545; 
+    color: white; 
+    border: none; 
+    padding: 10px 15px; 
+    border-radius: 5px;
+    cursor: pointer;
+">Clear Cart</button>
+
+        <br>
+        <br>
         <button onclick="openDailySummaryModal()">Submit Total</button>
     </div>
 
@@ -38,7 +63,8 @@
 
 
 <!-- Hidden Daily Summary Modal -->
-<div id="dailySummaryModal" style="display:none; position: fixed; top: 20%; left: 50%; transform: translate(-50%, 0); width: 400px; background: white; padding: 20px; border: 1px solid black; z-index: 1000;">
+<div id="dailySummaryModal"
+    style="display:none; position: fixed; top: 20%; left: 50%; transform: translate(-50%, 0); width: 400px; background: white; padding: 20px; border: 1px solid black; z-index: 1000;">
     <h2>Submit Daily Total</h2>
     <div id="dailySummaryItems"></div>
     <label for="dailyTotal">Total Sales (€):</label>
@@ -49,200 +75,206 @@
 </div>
 
 <script>
-let items = [];
-let cart = {};
-let usageStats = {}; 
+    let items = [];
+    let cart = {};
+    let usageStats = {};
 
-// Function to add an item to the cart
-function addToCart(item, price, sizeLabel) {
-    const key = item.id + "-" + (sizeLabel ? sizeLabel : "default");
-    
-    if (cart[key]) {
-        cart[key].quantity += 1;
-    } else {
-        cart[key] = {
-            item: item,
-            quantity: 1,
-            unitPrice: parseFloat(price), // Ensure price is a number
-            size: sizeLabel
-        };
+    // Function to add an item to the cart
+    function addToCart(item, price, sizeLabel) {
+        const key = item.id + "-" + (sizeLabel ? sizeLabel : "default");
+
+        if (cart[key]) {
+            cart[key].quantity += 1;
+        } else {
+            cart[key] = {
+                item: item,
+                quantity: 1,
+                unitPrice: parseFloat(price), // Ensure price is a number
+                size: sizeLabel
+            };
+        }
+
+        usageStats[key] = (usageStats[key] || 0) + 1;
+        updateCart();
     }
 
-    usageStats[key] = (usageStats[key] || 0) + 1;
-    updateCart();
-}
+    // Function to update the cart table
+    function updateCart() {
+        const tbody = document.querySelector("#cartTable tbody");
+        tbody.innerHTML = "";
+        let finalPrice = 0;
 
-// Function to update the cart table
-function updateCart() {
-    const tbody = document.querySelector("#cartTable tbody");
-    tbody.innerHTML = "";
-    let finalPrice = 0;
+        for (const key in cart) {
+            const cartItem = cart[key];
+            const total = cartItem.quantity * cartItem.unitPrice;
+            finalPrice += total;
 
-    for (const key in cart) {
-        const cartItem = cart[key];
-        const total = cartItem.quantity * cartItem.unitPrice;
-        finalPrice += total;
-
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
             <td>${cartItem.item.name}</td>
             <td>${cartItem.size ? cartItem.size : "-"}</td>
             <td>${cartItem.quantity}</td>
-            <td>€${parseFloat(cartItem.unitPrice).toFixed(2)}</td>
-            <td>€${parseFloat(total).toFixed(2)}</td>
+            <td>${parseFloat(cartItem.unitPrice).toFixed(2)}€</td>
+            <td>${parseFloat(total).toFixed(2)}€</td>
             <td><button onclick="removeFromCart('${key}')">Remove</button></td>
         `;
-        tbody.appendChild(tr);
+            tbody.appendChild(tr);
+        }
+
+        document.getElementById("finalPrice").textContent = "Final Price: " + finalPrice.toFixed(2) + " €";
     }
 
-    document.getElementById("finalPrice").textContent = "Final Price: €" + finalPrice.toFixed(2);
-}
-
-// Function to remove an item from the cart
-function removeFromCart(key) {
-    if (cart[key]) {
-        cart[key].quantity -= 1;
-        if (cart[key].quantity <= 0) {
-            delete cart[key];
+    // Function to remove an item from the cart
+    function removeFromCart(key) {
+        if (cart[key]) {
+            cart[key].quantity -= 1;
+            if (cart[key].quantity <= 0) {
+                delete cart[key];
+            }
+            updateCart();
         }
+    }
+
+    // Function to clear the cart
+    function clearCart() {
+        cart = {};
         updateCart();
     }
-}
 
-// Function to clear the cart
-function clearCart() {
-    cart = {};
-    updateCart();
-}
-
-// Function to finish a transaction
-function finishTransaction() {
-    alert("Transaction finished!");
-    cart = {};
-    updateCart();
-}
-
-// Function to toggle visibility of categories and subcategories
-function toggleSection(event) {
-    const section = event.target.nextElementSibling;
-    if (section) {
-        section.style.display = (section.style.display === "none") ? "block" : "none";
+    // Function to finish a transaction
+    function finishTransaction() {
+        alert("Transaction finished!");
+        cart = {};
+        updateCart();
     }
-}
 
-// Function to load items from the backend
-function loadItems() {
-    fetch("/get_items")
-        .then(response => response.json())
-        .then(data => {
-            console.log("Fetched items:", data); 
-            if (data.success) {
-                items = data.items;
-                renderItems();
-            } else {
-                console.error("Error loading items:", data.message);
-            }
-        })
-        .catch(error => console.error("Error:", error));
-}
-
-// Function to create an item card
-function createItemCard(item) {
-    if (!item || !item.name) return document.createElement("div");
-
-    const card = document.createElement("div");
-    card.style.border = "1px solid #ccc";
-    card.style.padding = "10px";
-    card.style.display = "flex";
-    card.style.flexDirection = "column";
-    card.style.alignItems = "flex-start";
-    card.style.minWidth = "200px";
-
-    const title = document.createElement("h3");
-    title.textContent = item.name;
-    card.appendChild(title);
-
-    const optionsContainer = document.createElement("div");
-    optionsContainer.style.display = "flex";
-    optionsContainer.style.flexWrap = "wrap";
-    optionsContainer.style.gap = "5px";
-
-    let options = item.description.sizes || [{ label: "Default", price: item.description.basePrice }];
-
-    options.forEach(option => {
-        const btn = document.createElement("button");
-        btn.textContent = option.label + ": €" + option.price;
-        btn.onclick = () => addToCart(item, option.price, option.label);
-        optionsContainer.appendChild(btn);
-    });
-
-    card.appendChild(optionsContainer);
-    return card;
-}
-
-// Function to render items in categories
-function renderItems() {
-    const container = document.getElementById("itemsContainer");
-    container.innerHTML = "";
-    const categories = {};
-
-    items.forEach(item => {
-        if (!item.description) return;
-        const type = item.description.type || "other";
-
-        if (type === "drinks") {
-            if (!categories["drinks"]) {
-                categories["drinks"] = { "non alcoholic": [], "alcoholic": [] };
-            }
-            if (item.description.alcoholic) {
-                categories["drinks"]["alcoholic"].push(item);
-            } else {
-                categories["drinks"]["non alcoholic"].push(item);
-            }
-        } else {
-            if (!categories[type]) {
-                categories[type] = [];
-            }
-            categories[type].push(item);
+    // Function to toggle visibility of categories and subcategories
+    function toggleSection(event) {
+        const section = event.target.nextElementSibling;
+        if (section) {
+            section.style.display = (section.style.display === "none") ? "block" : "none";
         }
-    });
-
-    for (const cat in categories) {
-        if (!categories[cat] || categories[cat].length === 0) continue;
-
-        const section = document.createElement("div");
-        section.style.marginBottom = "20px";
-
-        const header = document.createElement("h2");
-        header.textContent = cat.toUpperCase();
-        header.style.cursor = "pointer";
-        header.addEventListener("click", toggleSection);
-        section.appendChild(header);
-
-        for (const sub in categories[cat]) {
-            if (!categories[cat][sub].length) continue;
-            const subHeader = document.createElement("h3");
-            subHeader.textContent = sub.charAt(0).toUpperCase() + sub.slice(1);
-            subHeader.style.cursor = "pointer";
-            subHeader.addEventListener("click", toggleSection);
-            section.appendChild(subHeader);
-
-            const itemsFlex = document.createElement("div");
-            itemsFlex.style.display = "flex";
-            itemsFlex.style.flexWrap = "wrap";
-            itemsFlex.style.gap = "10px";
-
-            categories[cat][sub].forEach(item => {
-                const itemCard = createItemCard(item);
-                itemsFlex.appendChild(itemCard);
-            });
-            section.appendChild(itemsFlex);
-        }
-        container.appendChild(section);
     }
-}
 
-// Ensure items are loaded when the page loads
-document.addEventListener("DOMContentLoaded", loadItems);
+    // Function to load items from the backend
+    function loadItems() {
+        fetch("/get_items")
+            .then(response => response.json())
+            .then(data => {
+                console.log("Fetched items:", data);
+                if (data.success) {
+                    items = data.items;
+                    renderItems();
+                } else {
+                    console.error("Error loading items:", data.message);
+                }
+            })
+            .catch(error => console.error("Error:", error));
+    }
+
+    // Function to create an item card
+    function createItemCard(item) {
+        if (!item || !item.name) return document.createElement("div");
+
+        const card = document.createElement("div");
+        card.style.border = "1px solid #ccc";
+        card.style.padding = "10px";
+        card.style.display = "flex";
+        card.style.flexDirection = "column";
+        card.style.alignItems = "center";
+        card.style.justifyContent = "center";
+        card.style.minWidth = "200px";
+        card.style.backgroundColor = "#f9f9f9";
+        card.style.textAlign = "center";
+        card.style.borderRadius = "10px";
+        card.style.boxShadow = "2px 2px 5px rgba(0,0,0,0.1)";
+
+
+        const title = document.createElement("h3");
+        title.textContent = item.name;
+        card.appendChild(title);
+
+        const optionsContainer = document.createElement("div");
+        optionsContainer.style.display = "flex";
+        optionsContainer.style.flexWrap = "wrap";
+        optionsContainer.style.gap = "5px";
+
+        let options = item.description.sizes || [{ label: "Default", price: item.description.basePrice }];
+
+        options.forEach(option => {
+            const btn = document.createElement("button");
+            btn.textContent = option.label + "l : " + option.price + " €";
+            btn.onclick = () => addToCart(item, option.price, option.label);
+            optionsContainer.appendChild(btn);
+        });
+
+        card.appendChild(optionsContainer);
+        return card;
+    }
+
+    // Function to render items in categories
+    function renderItems() {
+        const container = document.getElementById("itemsContainer");
+        container.innerHTML = "";
+        const categories = {};
+
+        items.forEach(item => {
+            if (!item.description) return;
+            const type = item.description.type || "other";
+
+            if (type === "drinks") {
+                if (!categories["drinks"]) {
+                    categories["drinks"] = { "non alcoholic": [], "alcoholic": [] };
+                }
+                if (item.description.alcoholic) {
+                    categories["drinks"]["alcoholic"].push(item);
+                } else {
+                    categories["drinks"]["non alcoholic"].push(item);
+                }
+            } else {
+                if (!categories[type]) {
+                    categories[type] = [];
+                }
+                categories[type].push(item);
+            }
+        });
+
+        for (const cat in categories) {
+            if (!categories[cat] || categories[cat].length === 0) continue;
+
+            const section = document.createElement("div");
+            section.style.marginBottom = "20px";
+
+            const header = document.createElement("h2");
+            header.textContent = cat.toUpperCase();
+            header.style.cursor = "pointer";
+            header.addEventListener("click", toggleSection);
+            section.appendChild(header);
+
+            for (const sub in categories[cat]) {
+                if (!categories[cat][sub].length) continue;
+                const subHeader = document.createElement("h3");
+                subHeader.textContent = sub.charAt(0).toUpperCase() + sub.slice(1);
+                subHeader.style.cursor = "pointer";
+                subHeader.addEventListener("click", toggleSection);
+                section.appendChild(subHeader);
+
+                const itemsFlex = document.createElement("div");
+                itemsFlex.style.display = "flex";
+                itemsFlex.style.flexWrap = "wrap";
+                itemsFlex.style.gap = "10px";
+
+                categories[cat][sub].forEach(item => {
+                    const itemCard = createItemCard(item);
+                    itemsFlex.appendChild(itemCard);
+                });
+                section.appendChild(itemsFlex);
+            }
+            container.appendChild(section);
+        }
+    }
+
+    // Ensure items are loaded when the page loads
+    document.addEventListener("DOMContentLoaded", loadItems);
 </script>
 {% endblock %}
