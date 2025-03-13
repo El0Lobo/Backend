@@ -1,158 +1,648 @@
 {% extends 'base.html' %}
 {% block content %}
-<h1>Standards</h1>
-<div class="List" id="list">
-    <form action="{{ url_for('setup.setup') }}" method="POST" enctype="multipart/form-data">
-        <!-- Organization Details -->
-        <label for="organization_name">Organization Name:</label>
-        <input type="text" id="organization_name" name="organization_name" value="{{ schema_defaults.get('organization_name', '') }}"><br>
+<div class="container">
+    <!-- Left Column: Original Setup Form -->
+    <div class="List" id="list">
+        <h1 style="color: antiquewhite; text-shadow: none;">Standards</h1>
+        <form action="{{ url_for('setup.setup') }}" method="POST" enctype="multipart/form-data">
+            <!-- Organization Details -->
+            <label for="organization_name">Organization Name:</label>
+            <input type="text" id="organization_name" name="organization_name" value="{{ schema_defaults.get('organization_name', '') }}"><br>
 
-        <label for="organization_website">Organization Website:</label>
-        <input type="text" id="organization_website" name="organization_website" value="{{ schema_defaults.get('organization_website', '') }}"><br>
+            <label for="organization_website">Organization Website:</label>
+            <input type="text" id="organization_website" name="organization_website" value="{{ schema_defaults.get('organization_website', '') }}"><br>
 
-        <label for="organization_logo">Organization Logo:</label>
-        <input type="file" id="organization_logo" name="organization_logo" accept="image/*"><br>
-        {% if schema_defaults.get('organization_logo') %}
+            <label for="organization_logo">Organization Logo:</label>
+            <input type="file" id="organization_logo" name="organization_logo" accept="image/*"><br>
+            {% if schema_defaults.get('organization_logo') %}
             <img src="{{ url_for('static', filename='uploads/' + schema_defaults.get('organization_logo')) }}" alt="Organization Logo" width="100"><br>
-        {% endif %}
-
-        <!-- Author Details -->
-        <label for="author_name">Author Name:</label>
-        <input type="text" id="author_name" name="author_name" value="{{ schema_defaults.get('author_name', '') }}"><br>
-
-        <!-- Location Details -->
-        <label for="location_name">Location Name:</label>
-        <input type="text" id="location_name" name="location_name" value="{{ schema_defaults.get('location_name', '') }}"><br>
-
-        <label for="street_address">Street Address:</label>
-        <input type="text" id="street_address" name="street_address" value="{{ schema_defaults.get('street_address', '') }}"><br>
-
-        <label for="city">City:</label>
-        <input type="text" id="city" name="city" value="{{ schema_defaults.get('city', '') }}"><br>
-
-        <label for="postal_code">Postal Code:</label>
-        <input type="text" id="postal_code" name="postal_code" value="{{ schema_defaults.get('postal_code', '') }}"><br>
-
-        <label for="country">Country:</label>
-        <input type="text" id="country" name="country" value="{{ schema_defaults.get('country', '') }}"><br>
-
-        <!-- Venue Type Selection -->
-        <label for="venue_type">Venue Type:</label>
-        <select id="venue_type" name="venue_type" onchange="addVenueType()">
-            <option value="MusicVenue">Music Venue</option>
-            <option value="BarOrPub">Bar or Pub</option>
-            <option value="NightClub">Night Club</option>
-            <option value="Restaurant">Restaurant</option>
-            <option value="CafeOrCoffeeShop">Cafe or Coffee Shop</option>
-            <option value="EventVenue">Event Venue</option>
-        </select>
-        <div id="selected_venues">
-            {% if schema_defaults.get('venue_type') %}
-                {% for venue in schema_defaults.get('venue_type').split(',') %}
-                    <span class="selected-venue" style="background-color: rgba(255, 255, 255, 0.2); padding: 5px; margin: 5px; display: inline-block; border: 1px solid antiquewhite;">
-                        {{ venue }}
-                    </span>
-                {% endfor %}
             {% endif %}
-        </div>
-        <input type="hidden" id="venue_type_list" name="venue_type_list" value="{{ schema_defaults.get('venue_type', '') }}">
-        <br>
 
-        <!-- Accessibility -->
-        <label for="accessibility">Accessibility:</label>
-        <select id="accessibility" name="accessibility">
-            <option value="WheelchairAccessible" {% if schema_defaults.get('accessibility') == 'WheelchairAccessible' %}selected{% endif %}>Wheelchair Accessible</option>
-            <option value="NotWheelchairAccessible" {% if schema_defaults.get('accessibility') == 'NotWheelchairAccessible' %}selected{% endif %}>Not Wheelchair Accessible</option>
-            <option value="PartialWheelchairAccess" {% if schema_defaults.get('accessibility') == 'PartialWheelchairAccess' %}selected{% endif %}>Partial Wheelchair Access</option>
-        </select><br>
+            <!-- Author Details -->
+            <label for="author_name">Author Name:</label>
+            <input type="text" id="author_name" name="author_name" value="{{ schema_defaults.get('author_name', '') }}"><br>
 
-        <!-- Event Status -->
-        <label for="event_status">Event Status:</label>
-        <select id="event_status" name="event_status">
-            <option value="https://schema.org/EventScheduled" {% if schema_defaults.get('event_status') == 'https://schema.org/EventScheduled' %}selected{% endif %}>Event Scheduled</option>
-            <option value="https://schema.org/EventCancelled" {% if schema_defaults.get('event_status') == 'https://schema.org/EventCancelled' %}selected{% endif %}>Event Cancelled</option>
-            <option value="https://schema.org/EventPostponed" {% if schema_defaults.get('event_status') == 'https://schema.org/EventPostponed' %}selected{% endif %}>Event Postponed</option>
-            <option value="https://schema.org/EventRescheduled" {% if schema_defaults.get('event_status') == 'https://schema.org/EventRescheduled' %}selected{% endif %}>Event Rescheduled</option>
-        </select><br>
+            <!-- Location Details -->
+            <label for="location_name">Location Name:</label>
+            <input type="text" id="location_name" name="location_name" value="{{ schema_defaults.get('location_name', '') }}"><br>
 
-        <!-- Default Image -->
-        <label for="default_image">Default Image:</label>
-        <input type="file" id="default_image" name="default_image" accept="image/*"><br>
-        {% if schema_defaults.get('default_image') %}
-            <img src="{{ url_for('static', filename='uploads/' + schema_defaults.get('default_image')) }}" alt="Default Image" width="100"><br>
-        {% endif %}
+            <label for="street_address">Street Address:</label>
+            <input type="text" id="street_address" name="street_address" value="{{ schema_defaults.get('street_address', '') }}"><br>
 
-        <!-- Contact Information -->
-        <label for="contact_email">Contact Email:</label>
-        <input type="text" id="contact_email" name="contact_email" value="{{ schema_defaults.get('contact_email', '') }}"><br>
+            <label for="city">City:</label>
+            <input type="text" id="city" name="city" value="{{ schema_defaults.get('city', '') }}"><br>
 
-        <label for="contact_phone">Contact Phone:</label>
-        <input type="text" id="contact_phone" name="contact_phone" value="{{ schema_defaults.get('contact_phone', '') }}"><br>
+            <label for="postal_code">Postal Code:</label>
+            <input type="text" id="postal_code" name="postal_code" value="{{ schema_defaults.get('postal_code', '') }}"><br>
 
-        <!-- Opening Times -->
-        <h3>Opening Times</h3>
-        {% for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] %}
-            <label for="{{ day }}_status">{{ day.capitalize() }} Status:</label>
-            <select id="{{ day }}_status" name="{{ day }}_status" onchange="toggleOpeningTimes('{{ day }}')">
-                <option value="closed" {% if schema_defaults.get(day + '_status') == 'closed' %}selected{% endif %}>Closed</option>
-                <option value="open" {% if schema_defaults.get(day + '_status') == 'open' %}selected{% endif %}>Open</option>
-                <option value="by_appointment" {% if schema_defaults.get(day + '_status') == 'by_appointment' %}selected{% endif %}>By Appointment</option>
+            <label for="country">Country:</label>
+            <input type="text" id="country" name="country" value="{{ schema_defaults.get('country', '') }}"><br>
+
+            <!-- Venue Type Selection -->
+            <label for="venue_type">Venue Type:</label>
+            <select id="venue_type" name="venue_type" onchange="addVenueType()">
+                <option value="MusicVenue">Music Venue</option>
+                <option value="BarOrPub">Bar or Pub</option>
+                <option value="NightClub">Night Club</option>
+                <option value="Restaurant">Restaurant</option>
+                <option value="CafeOrCoffeeShop">Cafe or Coffee Shop</option>
+                <option value="EventVenue">Event Venue</option>
+            </select>
+            <div id="selected_venues">
+                {% if schema_defaults.get('venue_type') %}
+                {% for venue in schema_defaults.get('venue_type').split(',') %}
+                <span class="selected-venue" style="background-color: rgba(255, 255, 255, 0.2); padding: 5px; margin: 5px; display: inline-block; border: 1px solid antiquewhite;">
+                    {{ venue }}
+                </span>
+                {% endfor %}
+                {% endif %}
+            </div>
+            <input type="hidden" id="venue_type_list" name="venue_type_list" value="{{ schema_defaults.get('venue_type', '') }}">
+            <br>
+
+            <!-- Accessibility -->
+            <label for="accessibility">Accessibility:</label>
+            <select id="accessibility" name="accessibility">
+                <option value="WheelchairAccessible" {% if schema_defaults.get('accessibility')=='WheelchairAccessible' %}selected{% endif %}>Wheelchair Accessible</option>
+                <option value="NotWheelchairAccessible" {% if schema_defaults.get('accessibility')=='NotWheelchairAccessible' %}selected{% endif %}>Not Wheelchair Accessible</option>
+                <option value="PartialWheelchairAccess" {% if schema_defaults.get('accessibility')=='PartialWheelchairAccess' %}selected{% endif %}>Partial Wheelchair Access</option>
             </select><br>
 
+            <!-- Default Image -->
+            <label for="default_image">Default Image:</label>
+            <input type="file" id="default_image" name="default_image" accept="image/*"><br>
+            {% if schema_defaults.get('default_image') %}
+            <img src="{{ url_for('static', filename='uploads/' + schema_defaults.get('default_image')) }}" alt="Default Image" width="100"><br>
+            {% endif %}
+
+            <!-- Contact Information -->
+            <label for="contact_email">Contact Email:</label>
+            <input type="text" id="contact_email" name="contact_email" value="{{ schema_defaults.get('contact_email', '') }}"><br>
+
+            <label for="contact_phone">Contact Phone:</label>
+            <input type="text" id="contact_phone" name="contact_phone" value="{{ schema_defaults.get('contact_phone', '') }}"><br>
+
+            <!-- Opening Times -->
+            <h3>Opening Times</h3>
+            {% for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] %}
+            <label for="{{ day }}_status">{{ day.capitalize() }} Status:</label>
+            <select id="{{ day }}_status" name="{{ day }}_status" onchange="toggleOpeningTimes('{{ day }}')">
+                <option value="closed" {% if schema_defaults.get(day + '_status' )=='closed' %}selected{% endif %}>Closed</option>
+                <option value="open" {% if schema_defaults.get(day + '_status' )=='open' %}selected{% endif %}>Open</option>
+                <option value="by_appointment" {% if schema_defaults.get(day + '_status' )=='by_appointment' %}selected{% endif %}>By Appointment</option>
+            </select><br>
             <div id="{{ day }}_times" style="display: {% if schema_defaults.get(day + '_status') == 'open' %}block{% else %}none{% endif %};">
                 <label for="{{ day }}_opening_time">{{ day.capitalize() }} Opening:</label>
                 <input type="time" id="{{ day }}_opening_time" name="{{ day }}_opening_time" value="{{ schema_defaults.get(day + '_opening_time', '') }}">
                 <label for="{{ day }}_closing_time">Closing:</label>
                 <input type="time" id="{{ day }}_closing_time" name="{{ day }}_closing_time" value="{{ schema_defaults.get(day + '_closing_time', '') }}"><br><br>
             </div>
-        {% endfor %}
+            {% endfor %}
 
-        <!-- Social Media Links -->
-        <h3>Social Media Links</h3>
+            <!-- Social Media Links -->
+            <h3>Social Media Links</h3>
+            <label for="facebook">Facebook:</label>
+            <input type="url" id="facebook" name="facebook" value="{{ schema_defaults.get('facebook', '') }}"><br>
+            <label for="instagram">Instagram:</label>
+            <input type="url" id="instagram" name="instagram" value="{{ schema_defaults.get('instagram', '') }}"><br>
+            <label for="twitter">Twitter:</label>
+            <input type="url" id="twitter" name="twitter" value="{{ schema_defaults.get('twitter', '') }}"><br>
+            <label for="youtube">YouTube:</label>
+            <input type="url" id="youtube" name="youtube" value="{{ schema_defaults.get('youtube', '') }}"><br>
+            <label for="linkedin">LinkedIn:</label>
+            <input type="url" id="linkedin" name="linkedin" value="{{ schema_defaults.get('linkedin', '') }}"><br>
 
-        <label for="facebook">Facebook:</label>
-        <input type="url" id="facebook" name="facebook" value="{{ schema_defaults.get('facebook', '') }}"><br>
+            <!-- Submit Button -->
+            <button type="submit">Save Defaults</button>
+        </form>
+    </div>
 
-        <label for="instagram">Instagram:</label>
-        <input type="url" id="instagram" name="instagram" value="{{ schema_defaults.get('instagram', '') }}"><br>
+    <!-- Middle Column: Items for Sale -->
+    <div class="drinks">
+        <h1 style="color: antiquewhite; text-shadow: none;">Stuff For Sale</h1>
+        <!-- Single Item Form -->
+        <form id="itemForm" onsubmit="event.preventDefault(); saveItem();">
+            <!-- Item Type -->
+            <label>Item Type:</label>
+            <select id="itemType" onchange="toggleFields()">
+                <option value="drinks" selected>Drinks</option>
+                <option value="snacks">Snacks</option>
+                <option value="food">Food</option>
+                <option value="clothes">Clothes</option>
+                <option value="merch">Merch</option>
+                <option value="other">Other</option>
+            </select><br>
+            <!-- Item Name -->
+            <label>Item Name:</label>
+            <input type="text" id="itemName" placeholder="e.g. Apple Juice"><br>
+            <!-- Base Price (for all items) -->
+            <label>Base Price (€):</label>
+            <input type="number" id="basePrice" step="0.01" style="width:80px;"><br>
+            <!-- Drinks Fields -->
+            <div id="drinksFields">
+                <label>Alcoholic:</label>
+                <input type="checkbox" id="itemAlcoholic"><br>
+                <label>Default Volume (L):</label>
+                <input type="number" id="itemVolume" min="0.01" max="10" step="0.01"><br>
+                <div id="drinksSizes">
+                    <strong>Volume Options (optional):</strong>
+                    <div id="drinksSizesContainer"></div>
+                    <button type="button" onclick="addSizeRow('drinksSizesContainer', 'drinks')">Add Volume Option</button>
+                </div>
+            </div>
+            <!-- Clothes Fields -->
+            <div id="clothesFields">
+                <strong>Size Options:</strong>
+                <div id="clothesSizesContainer"></div>
+                <button type="button" onclick="addSizeRow('clothesSizesContainer', 'clothes')">Add Size Option</button>
+            </div>
+            <!-- Snacks Fields -->
+            <div id="snacksFields">
+                <strong>Weight Options (in grams, optional):</strong>
+                <div id="snacksSizesContainer"></div>
+                <button type="button" onclick="addSizeRow('snacksSizesContainer', 'snacks')">Add Weight Option</button>
+            </div>
+            <!-- Image Upload for Merch, Clothes, Other -->
+            <div id="imageField">
+                <label>Upload Image:</label>
+                <input type="file" id="itemImage" accept="image/*">
+                <img id="imagePreview" style="max-width: 100px; display: none; margin-top:5px;" alt="preview">
+            </div>
+            <!-- Save Button -->
+            <button type="submit">Save Item</button>
+        </form>
+        <hr>
+        <!-- Preview Section -->
+        <div id="itemsPreview">
+            <h2>Preview Items</h2>
+            <!-- Drinks Group -->
+            <div id="group-drinks">
+                <h3>Drinks</h3>
+                <div id="group-drinks-alcoholic">
+                    <h4>Alcoholic</h4>
+                    <ul></ul>
+                </div>
+                <div id="group-drinks-non-alcoholic">
+                    <h4>Non-Alcoholic</h4>
+                    <ul></ul>
+                </div>
+            </div>
+            <!-- Snacks Group -->
+            <div id="group-snacks">
+                <h3>Snacks</h3>
+                <ul></ul>
+            </div>
+            <!-- Food Group -->
+            <div id="group-food">
+                <h3>Food</h3>
+                <ul></ul>
+            </div>
+            <!-- Clothes Group -->
+            <div id="group-clothes">
+                <h3>Clothes</h3>
+                <ul></ul>
+            </div>
+            <!-- Merch Group -->
+            <div id="group-merch">
+                <h3>Merchandise</h3>
+                <ul></ul>
+            </div>
+            <!-- Other Group -->
+            <div id="group-other">
+                <h3>Other</h3>
+                <ul></ul>
+            </div>
+        </div>
+    </div>
 
-        <label for="twitter">Twitter:</label>
-        <input type="url" id="twitter" name="twitter" value="{{ schema_defaults.get('twitter', '') }}"><br>
+    <!-- Right Column: Recurring Events -->
+    <div class="events">
+        <h1 style="color: antiquewhite; text-shadow: none;">Recurring Events</h1>
+        <form id="eventsForm" onsubmit="event.preventDefault(); saveEvent();">
+            <label>Event Name:</label>
+            <input type="text" id="eventName" placeholder="Event name"><br>
+            <label>Event Description:</label>
+            <textarea id="eventDescription" placeholder="Description"></textarea><br>
+            <label>Event Logo:</label>
+            <input type="file" id="eventLogo" accept="image/*"><br>
+            <img id="eventLogoPreview" style="max-width:100px; display:none;" alt="Event Logo Preview"><br>
+            <label>Start Date:</label>
+            <input type="date" id="eventStartDate"><br>
+            <label>Start Time:</label>
+            <input type="time" id="eventStartTime"><br>
+            <label>Recurrence:</label>
+            <select id="recurrenceType" onchange="toggleSpecificDates()">
+                <option value="weekly" selected>Weekly</option>
+                <option value="biweekly">Biweekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+                <option value="specific">Specific Dates</option>
+            </select><br>
+            <div id="specificDatesContainer" style="display: none;">
+                <strong>Specific Dates:</strong>
+                <div id="specificDatesList"></div>
+                <button type="button" onclick="addSpecificDate()">Add Date</button>
+            </div>
+            <button type="submit">Save Event</button>
+        </form>
+        <hr>
+        <div id="eventsPreview">
+            <h2>Preview Recurring Events</h2>
+            <ul></ul>
+        </div>
+    </div>
 
-        <label for="youtube">YouTube:</label>
-        <input type="url" id="youtube" name="youtube" value="{{ schema_defaults.get('youtube', '') }}"><br>
-
-        <label for="linkedin">LinkedIn:</label>
-        <input type="url" id="linkedin" name="linkedin" value="{{ schema_defaults.get('linkedin', '') }}"><br>
-
-        <!-- Submit Button -->
-        <button type="submit">Save Defaults</button>
-    </form>
+    <!-- Fourth Column: Picture Archive -->
+    <div class="archive">
+        <h1 style="color: antiquewhite; text-shadow: none;">Picture Archive</h1>
+        <form id="archiveForm" onsubmit="event.preventDefault(); saveArchivePic();">
+            <label>Upload Picture:</label>
+            <input type="file" id="archiveImage" accept="image/*"><br>
+            <label>Picture Name:</label>
+            <input type="text" id="archivePicName" placeholder="Picture Name"><br>
+            <label>Category:</label>
+            <input type="text" id="archivePicCategory" placeholder="Category (or new)"><br>
+            <button type="submit">Save Picture</button>
+        </form>
+        <hr>
+        <div id="archiveContainer">
+            <!-- Archive images will be grouped in collapsibles here -->
+        </div>
+    </div>
 </div>
+
+<!-- Modal for full image display -->
+<div id="modalOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); align-items:center; justify-content:center;">
+    <div id="modalContent" style="position:relative;">
+        <img id="modalImage" style="max-width:90vw; max-height:90vh;" alt="Full Image">
+        <button id="modalClose" style="position:absolute; top:10px; right:10px;">Close</button>
+    </div>
+</div>
+
 <style>
+    .container {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 20px;
+    }
+    /* Left Column (Setup Form) */
     #list {
         background-color: #043368c9;
         max-width: fit-content;
         padding: 10px;
         color: antiquewhite;
     }
+    /* Middle Column (Items for Sale) */
+    .drinks {
+        padding: 10px;
+        background-color: #043368c9;
+        border: 1px solid #ccc;
+        max-width: 700px;
+        color: antiquewhite;
+    }
+    /* Right Column (Recurring Events) */
+    .events {
+        padding: 10px;
+        background-color: #333;
+        color: antiquewhite;
+        max-width: 400px;
+    }
+    .events h1, .events h2, .events h3, .events h4 {
+        color: antiquewhite;
+        text-shadow: none;
+    }
+    /* Fourth Column (Picture Archive) */
+    .archive {
+        padding: 10px;
+        background-color: #222;
+        color: antiquewhite;
+        max-width: 400px;
+    }
+    .archive h1, .archive h2, .archive h3 {
+        color: antiquewhite;
+        text-shadow: none;
+    }
+    /* Dynamic Fields */
+    #drinksFields, #clothesFields, #snacksFields, #imageField {
+        margin: 10px 0;
+        padding: 10px;
+        border: 1px solid #ddd;
+        display: none;
+    }
+    .size-row {
+        margin-bottom: 5px;
+    }
+    .edit-button {
+        margin-left: 10px;
+        cursor: pointer;
+        color: blue;
+        text-decoration: underline;
+    }
+    #itemsPreview, #eventsPreview {
+        display: none;
+    }
+    /* Modal Styles */
+    #modalOverlay {
+        display: flex;
+    }
 </style>
 
 <script>
+    /***********************************************************
+     * Global Data Structures for Items
+     ***********************************************************/
+    let items = [];
+    let editIndex = null;
+    let currentImageDataUrl = "";
+
+    /***********************************************************
+     * Items Functions (saveItem, clearItemForm, toggleFields, addSizeRow, renderItems, removeItem, editItem)
+     ***********************************************************/
+    function saveItem() {
+        const name = document.getElementById("itemName").value.trim() || "Unnamed";
+        const type = document.getElementById("itemType").value;
+        const basePrice = document.getElementById("basePrice").value.trim() || "";
+        let itemData = {
+            name: name,
+            type: type,
+            basePrice: basePrice,
+            alcoholic: false,
+            volume: "",
+            sizes: [],
+            imageDataUrl: currentImageDataUrl
+        };
+        if (type === "drinks") {
+            itemData.alcoholic = document.getElementById("itemAlcoholic").checked;
+            itemData.volume = document.getElementById("itemVolume").value.trim();
+            const drinksSizesContainer = document.getElementById("drinksSizesContainer");
+            const sizeRows = drinksSizesContainer.querySelectorAll(".size-row");
+            sizeRows.forEach(row => {
+                const sizeValue = row.querySelector(".size-label").value.trim();
+                const sizePrice = row.querySelector(".size-price").value.trim();
+                if (sizePrice) {
+                    itemData.sizes.push({ label: sizeValue, price: sizePrice });
+                }
+            });
+        }
+        else if (type === "clothes") {
+            const clothesSizesContainer = document.getElementById("clothesSizesContainer");
+            const sizeRows = clothesSizesContainer.querySelectorAll(".size-row");
+            sizeRows.forEach(row => {
+                const sizeLabel = row.querySelector(".size-label").value.trim();
+                const sizePrice = row.querySelector(".size-price").value.trim();
+                if (sizePrice) {
+                    itemData.sizes.push({ label: sizeLabel, price: sizePrice });
+                }
+            });
+        }
+        else if (type === "snacks") {
+            const snacksSizesContainer = document.getElementById("snacksSizesContainer");
+            const sizeRows = snacksSizesContainer.querySelectorAll(".size-row");
+            sizeRows.forEach(row => {
+                const weight = row.querySelector(".size-label").value.trim();
+                const sizePrice = row.querySelector(".size-price").value.trim();
+                if (sizePrice) {
+                    itemData.sizes.push({ label: weight, price: sizePrice });
+                }
+            });
+        }
+        if (editIndex === null) {
+            items.push(itemData);
+        } else {
+            items[editIndex] = itemData;
+        }
+        renderItems();
+        clearItemForm();
+    }
+    function clearItemForm() {
+        document.getElementById("itemName").value = "";
+        document.getElementById("itemType").value = "drinks";
+        document.getElementById("basePrice").value = "";
+        document.getElementById("itemAlcoholic").checked = false;
+        document.getElementById("itemVolume").value = "";
+        document.getElementById("drinksSizesContainer").innerHTML = "";
+        document.getElementById("clothesSizesContainer").innerHTML = "";
+        document.getElementById("snacksSizesContainer").innerHTML = "";
+        currentImageDataUrl = "";
+        document.getElementById("itemImage").value = "";
+        let imagePreview = document.getElementById("imagePreview");
+        imagePreview.style.display = "none";
+        imagePreview.src = "";
+        editIndex = null;
+        toggleFields();
+    }
+    function toggleFields() {
+        const type = document.getElementById("itemType").value;
+        document.getElementById("drinksFields").style.display = (type === "drinks") ? "block" : "none";
+        document.getElementById("clothesFields").style.display = (type === "clothes") ? "block" : "none";
+        document.getElementById("snacksFields").style.display = (type === "snacks") ? "block" : "none";
+        const imageField = document.getElementById("imageField");
+        imageField.style.display = (type === "merch" || type === "clothes" || type === "other") ? "block" : "none";
+    }
+    function addSizeRow(containerId, category) {
+        const container = document.getElementById(containerId);
+        let innerHTML = "";
+        if (category === "drinks") {
+            innerHTML = `<label>Volume (L):</label>
+                         <input type="number" class="size-label" placeholder="e.g. 0.33" step="0.01" style="width:80px;">
+                         <label>Price (€):</label>
+                         <input type="number" class="size-price" step="0.01" style="width:80px;">
+                         <button type="button" onclick="this.parentNode.remove()">Remove</button>`;
+        } else if (category === "clothes") {
+            innerHTML = `<label>Size:</label>
+                         <input type="text" class="size-label" placeholder="add a number (34) or size (m)">
+                         <label>Price (€):</label>
+                         <input type="number" class="size-price" step="0.01" style="width:80px;">
+                         <button type="button" onclick="this.parentNode.remove()">Remove</button>`;
+        } else if (category === "snacks") {
+            innerHTML = `<label>Weight (g):</label>
+                         <input type="number" class="size-label" placeholder="e.g. 100" style="width:80px;">
+                         <label>Price (€):</label>
+                         <input type="number" class="size-price" step="0.01" style="width:80px;">
+                         <button type="button" onclick="this.parentNode.remove()">Remove</button>`;
+        }
+        const row = document.createElement("div");
+        row.className = "size-row";
+        row.innerHTML = innerHTML;
+        container.appendChild(row);
+    }
+    function renderItems() {
+        const previewContainer = document.getElementById("itemsPreview");
+        const groups = ["group-drinks-alcoholic", "group-drinks-non-alcoholic", "group-snacks", "group-food", "group-clothes", "group-merch", "group-other"];
+        groups.forEach(groupId => {
+            let groupEl = document.getElementById(groupId);
+            if (groupEl) {
+                groupEl.querySelector("ul").innerHTML = "";
+                groupEl.style.display = "none";
+            }
+        });
+        if (items.length === 0) {
+            previewContainer.style.display = "none";
+            return;
+        } else {
+            previewContainer.style.display = "block";
+        }
+        items.forEach((item, index) => {
+            let groupId = "";
+            if (item.type === "drinks") {
+                groupId = item.alcoholic ? "group-drinks-alcoholic" : "group-drinks-non-alcoholic";
+            } else if (item.type === "snacks") {
+                groupId = "group-snacks";
+            } else if (item.type === "food") {
+                groupId = "group-food";
+            } else if (item.type === "clothes") {
+                groupId = "group-clothes";
+            } else if (item.type === "merch") {
+                groupId = "group-merch";
+            } else {
+                groupId = "group-other";
+            }
+            const ul = document.querySelector(`#${groupId} ul`);
+            document.getElementById(groupId).style.display = "block";
+            let details = "";
+            if (item.basePrice) {
+                details += `Price: ${item.basePrice}€`;
+            }
+            if (item.type === "drinks") {
+                details += details ? " | " : "";
+                details += item.alcoholic ? "Alcoholic" : "Non-Alcoholic";
+                if (item.volume) {
+                    details += `, Volume: ${item.volume}L`;
+                }
+            }
+            if (item.sizes && item.sizes.length > 0) {
+                const sizeStrings = item.sizes.map(s => {
+                    let label = s.label ? s.label + ": " : "";
+                    if (item.type === "drinks") {
+                        return label + `${s.price} L`;
+                    } else if (item.type === "snacks") {
+                        return label + `${s.price} g`;
+                    } else {
+                        return label + `${s.price}€`;
+                    }
+                });
+                details += details ? " | " : "";
+                details += "Options: " + sizeStrings.join(", ");
+            }
+            const li = document.createElement("li");
+            li.textContent = item.name + (details ? ` (${details})` : "");
+            if (item.imageDataUrl) {
+                const thumb = document.createElement("img");
+                thumb.src = item.imageDataUrl;
+                thumb.style.maxWidth = "50px";
+                thumb.style.marginLeft = "10px";
+                li.appendChild(thumb);
+            }
+            const editLink = document.createElement("span");
+            editLink.className = "edit-button";
+            editLink.textContent = " Edit ";
+            editLink.onclick = () => editItem(index);
+            li.appendChild(editLink);
+            const removeLink = document.createElement("span");
+            removeLink.className = "edit-button";
+            removeLink.style.color = "red";
+            removeLink.textContent = " Remove";
+            removeLink.onclick = () => removeItem(index);
+            li.appendChild(removeLink);
+            ul.appendChild(li);
+        });
+    }
+    function removeItem(index) {
+        items.splice(index, 1);
+        renderItems();
+    }
+    function editItem(index) {
+        editIndex = index;
+        const item = items[index];
+        document.getElementById("itemName").value = item.name;
+        document.getElementById("itemType").value = item.type;
+        document.getElementById("basePrice").value = item.basePrice || "";
+        toggleFields();
+        document.getElementById("drinksSizesContainer").innerHTML = "";
+        document.getElementById("clothesSizesContainer").innerHTML = "";
+        document.getElementById("snacksSizesContainer").innerHTML = "";
+        currentImageDataUrl = item.imageDataUrl || "";
+        const imagePreview = document.getElementById("imagePreview");
+        if (currentImageDataUrl) {
+            imagePreview.src = currentImageDataUrl;
+            imagePreview.style.display = "block";
+        } else {
+            imagePreview.style.display = "none";
+            imagePreview.src = "";
+        }
+        document.getElementById("itemImage").value = "";
+        if (item.type === "drinks") {
+            document.getElementById("itemAlcoholic").checked = item.alcoholic;
+            document.getElementById("itemVolume").value = item.volume || "";
+            if (item.sizes) {
+                item.sizes.forEach(sz => {
+                    const row = document.createElement("div");
+                    row.className = "size-row";
+                    row.innerHTML = `<label>Volume (L):</label>
+                                     <input type="number" class="size-label" placeholder="e.g. 0.33" step="0.01" style="width:80px;" value="${sz.label || ''}">
+                                     <label>Price (€):</label>
+                                     <input type="number" class="size-price" step="0.01" style="width:80px;" value="${sz.price || ''}">
+                                     <button type="button" onclick="this.parentNode.remove()">Remove</button>`;
+                    document.getElementById("drinksSizesContainer").appendChild(row);
+                });
+            }
+        }
+        else if (item.type === "clothes") {
+            if (item.sizes) {
+                item.sizes.forEach(sz => {
+                    const row = document.createElement("div");
+                    row.className = "size-row";
+                    row.innerHTML = `<label>Size:</label>
+                                     <input type="text" class="size-label" placeholder="add a number (34) or size (m)" value="${sz.label || ''}">
+                                     <label>Price (€):</label>
+                                     <input type="number" class="size-price" step="0.01" style="width:80px;" value="${sz.price || ''}">
+                                     <button type="button" onclick="this.parentNode.remove()">Remove</button>`;
+                    document.getElementById("clothesSizesContainer").appendChild(row);
+                });
+            }
+        }
+        else if (item.type === "snacks") {
+            if (item.sizes) {
+                item.sizes.forEach(sz => {
+                    const row = document.createElement("div");
+                    row.className = "size-row";
+                    row.innerHTML = `<label>Weight (g):</label>
+                                     <input type="number" class="size-label" placeholder="e.g. 100" style="width:80px;" value="${sz.label || ''}">
+                                     <label>Price (€):</label>
+                                     <input type="number" class="size-price" step="0.01" style="width:80px;" value="${sz.price || ''}">
+                                     <button type="button" onclick="this.parentNode.remove()">Remove</button>`;
+                    document.getElementById("snacksSizesContainer").appendChild(row);
+                });
+            }
+        }
+    }
+    document.getElementById("itemImage").addEventListener("change", function (event) {
+        const file = event.target.files[0];
+        if (!file) {
+            currentImageDataUrl = "";
+            document.getElementById("imagePreview").style.display = "none";
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            currentImageDataUrl = e.target.result;
+            const preview = document.getElementById("imagePreview");
+            preview.src = currentImageDataUrl;
+            preview.style.display = "block";
+        };
+        reader.readAsDataURL(file);
+    });
+
+    /***********************************************************
+     * Original Setup Form Utilities
+     ***********************************************************/
     function addVenueType() {
         const venueSelect = document.getElementById("venue_type");
         const selectedVenuesDiv = document.getElementById("selected_venues");
         const venueTypeListInput = document.getElementById("venue_type_list");
-
-        // Get the selected option value
         const selectedOptionValue = venueSelect.value;
-
-        // Check if the value is already selected
-        if (venueTypeListInput.value.split(',').includes(selectedOptionValue)) {
-            return; // Prevent adding duplicates
-        }
-
-        // Create a new element for the selected venue
+        if (venueTypeListInput.value.split(',').includes(selectedOptionValue)) return;
         const selectedVenueElement = document.createElement("span");
         selectedVenueElement.textContent = selectedOptionValue;
         selectedVenueElement.className = "selected-venue";
@@ -161,20 +651,250 @@
         selectedVenueElement.style.margin = "5px";
         selectedVenueElement.style.display = "inline-block";
         selectedVenueElement.style.border = "1px solid antiquewhite";
-
-        // Append the selected venue to the div
         selectedVenuesDiv.appendChild(selectedVenueElement);
-
-        // Update the hidden input to store selected values
         let currentValues = venueTypeListInput.value ? venueTypeListInput.value.split(',') : [];
         currentValues.push(selectedOptionValue);
         venueTypeListInput.value = currentValues.join(',');
     }
- 
     function toggleOpeningTimes(day) {
         const status = document.getElementById(`${day}_status`).value;
         const timesDiv = document.getElementById(`${day}_times`);
+        if (status === 'open') {
+            timesDiv.style.display = 'block';
+            document.getElementById(`${day}_opening_time`).required = true;
+            document.getElementById(`${day}_closing_time`).required = true;
+        } else {
+            timesDiv.style.display = 'none';
+            document.getElementById(`${day}_opening_time`).required = false;
+            document.getElementById(`${day}_closing_time`).required = false;
+        }
+    }
+    window.addEventListener("DOMContentLoaded", () => {
+        toggleFields();
+    });
 
+    /***********************************************************
+     * Recurring Events Functions
+     ***********************************************************/
+    let events = [];
+    let currentEventLogoDataUrl = "";
+    document.getElementById("eventLogo").addEventListener("change", function(event) {
+        const file = event.target.files[0];
+        if (!file) {
+            currentEventLogoDataUrl = "";
+            document.getElementById("eventLogoPreview").style.display = "none";
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            currentEventLogoDataUrl = e.target.result;
+            const preview = document.getElementById("eventLogoPreview");
+            preview.src = currentEventLogoDataUrl;
+            preview.style.display = "block";
+        };
+        reader.readAsDataURL(file);
+    });
+    function toggleSpecificDates() {
+        const recurrenceType = document.getElementById("recurrenceType").value;
+        const container = document.getElementById("specificDatesContainer");
+        container.style.display = (recurrenceType === "specific") ? "block" : "none";
+    }
+    function addSpecificDate() {
+        const list = document.getElementById("specificDatesList");
+        const row = document.createElement("div");
+        row.className = "specific-date-row";
+        row.innerHTML = `<input type="date" class="specific-date">
+                         <button type="button" onclick="this.parentNode.remove()">Remove</button>`;
+        list.appendChild(row);
+    }
+    function saveEvent() {
+        const name = document.getElementById("eventName").value.trim() || "Unnamed Event";
+        const description = document.getElementById("eventDescription").value.trim();
+        const startDate = document.getElementById("eventStartDate").value;
+        const startTime = document.getElementById("eventStartTime").value;
+        const recurrence = document.getElementById("recurrenceType").value;
+        let specificDates = [];
+        if (recurrence === "specific") {
+            const dateInputs = document.querySelectorAll("#specificDatesList .specific-date");
+            dateInputs.forEach(input => {
+                if (input.value) {
+                    specificDates.push(input.value);
+                }
+            });
+        }
+        const eventData = {
+            name: name,
+            description: description,
+            startDate: startDate,
+            startTime: startTime,
+            recurrence: recurrence,
+            specificDates: specificDates,
+            eventLogo: currentEventLogoDataUrl
+        };
+        events.push(eventData);
+        renderEvents();
+        clearEventForm();
+    }
+    function clearEventForm() {
+        document.getElementById("eventName").value = "";
+        document.getElementById("eventDescription").value = "";
+        document.getElementById("eventStartDate").value = "";
+        document.getElementById("eventStartTime").value = "";
+        document.getElementById("recurrenceType").value = "weekly";
+        toggleSpecificDates();
+        document.getElementById("specificDatesList").innerHTML = "";
+        currentEventLogoDataUrl = "";
+        document.getElementById("eventLogo").value = "";
+        document.getElementById("eventLogoPreview").style.display = "none";
+        document.getElementById("eventLogoPreview").src = "";
+    }
+    function renderEvents() {
+        const ul = document.querySelector("#eventsPreview ul");
+        ul.innerHTML = "";
+        if (events.length === 0) {
+            document.getElementById("eventsPreview").style.display = "none";
+            return;
+        } else {
+            document.getElementById("eventsPreview").style.display = "block";
+        }
+        events.forEach((evt, index) => {
+            let li = document.createElement("li");
+            let text = `${evt.name} - Starts on ${evt.startDate} ${evt.startTime} - Recurrence: ${evt.recurrence}`;
+            if (evt.recurrence === "specific" && evt.specificDates.length > 0) {
+                text += ` (${evt.specificDates.join(", ")})`;
+            }
+            li.textContent = text;
+            if (evt.eventLogo) {
+                const logoThumb = document.createElement("img");
+                logoThumb.src = evt.eventLogo;
+                logoThumb.style.maxWidth = "50px";
+                logoThumb.style.marginLeft = "10px";
+                li.appendChild(logoThumb);
+                // Download button for event logo
+                const downloadBtn = document.createElement("button");
+                downloadBtn.textContent = "Download Logo";
+                downloadBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    downloadImage(evt.eventLogo, `${evt.name}_logo.png`);
+                };
+                li.appendChild(downloadBtn);
+            }
+            const removeBtn = document.createElement("span");
+            removeBtn.textContent = " Remove";
+            removeBtn.style.color = "red";
+            removeBtn.style.cursor = "pointer";
+            removeBtn.onclick = () => {
+                events.splice(index, 1);
+                renderEvents();
+            };
+            li.appendChild(removeBtn);
+            ul.appendChild(li);
+        });
+    }
+
+    /***********************************************************
+     * Archive Picture Functions
+     ***********************************************************/
+    let archivePics = [];
+    function saveArchivePic() {
+        const name = document.getElementById("archivePicName").value.trim() || "Untitled";
+        const category = document.getElementById("archivePicCategory").value.trim() || "Uncategorized";
+        const fileInput = document.getElementById("archiveImage");
+        const file = fileInput.files[0];
+        if (!file) {
+            alert("Please select an image.");
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const picDataUrl = e.target.result;
+            archivePics.push({ name: name, category: category, imageDataUrl: picDataUrl });
+            renderArchive();
+            document.getElementById("archivePicName").value = "";
+            document.getElementById("archivePicCategory").value = "";
+            fileInput.value = "";
+        };
+        reader.readAsDataURL(file);
+    }
+    function renderArchive() {
+        const container = document.getElementById("archiveContainer");
+        container.innerHTML = "";
+        if (archivePics.length === 0) return;
+        // Group pictures by category
+        const groups = {};
+        archivePics.forEach(pic => {
+            if (!groups[pic.category]) groups[pic.category] = [];
+            groups[pic.category].push(pic);
+        });
+        // For each category, create a collapsible section
+        Object.keys(groups).forEach(category => {
+            const section = document.createElement("div");
+            section.className = "archive-section";
+            const header = document.createElement("h3");
+            header.textContent = category;
+            header.style.cursor = "pointer";
+            header.onclick = function() {
+                const content = this.nextElementSibling;
+                content.style.display = (content.style.display === "none") ? "block" : "none";
+            };
+            section.appendChild(header);
+            const content = document.createElement("div");
+            content.className = "archive-content";
+            content.style.display = "none";
+            groups[category].forEach(pic => {
+                const picDiv = document.createElement("div");
+                picDiv.className = "archive-pic";
+                const thumb = document.createElement("img");
+                thumb.src = pic.imageDataUrl;
+                thumb.style.maxWidth = "100px";
+                thumb.style.margin = "5px";
+                thumb.style.cursor = "pointer";
+                thumb.onclick = function() {
+                    openModal(pic.imageDataUrl);
+                };
+                picDiv.appendChild(thumb);
+                const nameLabel = document.createElement("div");
+                nameLabel.textContent = pic.name;
+                picDiv.appendChild(nameLabel);
+                const downloadBtn = document.createElement("button");
+                downloadBtn.textContent = "Download";
+                downloadBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    downloadImage(pic.imageDataUrl, `${pic.name}.png`);
+                };
+                picDiv.appendChild(downloadBtn);
+                content.appendChild(picDiv);
+            });
+            section.appendChild(content);
+            container.appendChild(section);
+        });
+    }
+    function downloadImage(dataUrl, filename) {
+        const a = document.createElement("a");
+        a.href = dataUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+    function openModal(imageUrl) {
+        const modalOverlay = document.getElementById("modalOverlay");
+        const modalImage = document.getElementById("modalImage");
+        modalImage.src = imageUrl;
+        modalOverlay.style.display = "flex";
+    }
+    document.getElementById("modalOverlay").addEventListener("click", function(e) {
+        if (e.target === this || e.target.id === "modalClose") {
+            this.style.display = "none";
+        }
+    });
+
+    /***********************************************************
+     * Original Setup Form Utilities (toggleOpeningTimes)
+     ***********************************************************/
+    function toggleOpeningTimes(day) {
+        const status = document.getElementById(`${day}_status`).value;
+        const timesDiv = document.getElementById(`${day}_times`);
         if (status === 'open') {
             timesDiv.style.display = 'block';
             document.getElementById(`${day}_opening_time`).required = true;
@@ -186,22 +906,8 @@
         }
     }
 
-    function validateForm() {
-        // Loop through each day to validate the form if "Open" is selected
-        const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-        for (let day of days) {
-            const status = document.getElementById(`${day}_status`).value;
-            if (status === 'open') {
-                const openingTime = document.getElementById(`${day}_opening_time`).value;
-                const closingTime = document.getElementById(`${day}_closing_time`).value;
-
-                if (!openingTime || !closingTime) {
-                    alert(`Please provide both opening and closing times for ${day.charAt(0).toUpperCase() + day.slice(1)}`);
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
+    window.addEventListener("DOMContentLoaded", () => {
+        toggleFields();
+    });
 </script>
 {% endblock %}
