@@ -7,33 +7,40 @@
         <form action="{{ url_for('setup.setup') }}" method="POST" enctype="multipart/form-data">
             <!-- Organization Details -->
             <label for="organization_name">Organization Name:</label>
-            <input type="text" id="organization_name" name="organization_name" value="{{ schema_defaults.get('organization_name', '') }}"><br>
+            <input type="text" id="organization_name" name="organization_name"
+                value="{{ schema_defaults.get('organization_name', '') }}"><br>
 
             <label for="organization_website">Organization Website:</label>
-            <input type="text" id="organization_website" name="organization_website" value="{{ schema_defaults.get('organization_website', '') }}"><br>
+            <input type="text" id="organization_website" name="organization_website"
+                value="{{ schema_defaults.get('organization_website', '') }}"><br>
 
             <label for="organization_logo">Organization Logo:</label>
             <input type="file" id="organization_logo" name="organization_logo" accept="image/*"><br>
             {% if schema_defaults.get('organization_logo') %}
-            <img src="{{ url_for('static', filename='uploads/' + schema_defaults.get('organization_logo')) }}" alt="Organization Logo" width="100"><br>
+            <img src="{{ url_for('static', filename='uploads/' + schema_defaults.get('organization_logo')) }}"
+                alt="Organization Logo" width="100"><br>
             {% endif %}
 
             <!-- Author Details -->
             <label for="author_name">Author Name:</label>
-            <input type="text" id="author_name" name="author_name" value="{{ schema_defaults.get('author_name', '') }}"><br>
+            <input type="text" id="author_name" name="author_name"
+                value="{{ schema_defaults.get('author_name', '') }}"><br>
 
             <!-- Location Details -->
             <label for="location_name">Location Name:</label>
-            <input type="text" id="location_name" name="location_name" value="{{ schema_defaults.get('location_name', '') }}"><br>
+            <input type="text" id="location_name" name="location_name"
+                value="{{ schema_defaults.get('location_name', '') }}"><br>
 
             <label for="street_address">Street Address:</label>
-            <input type="text" id="street_address" name="street_address" value="{{ schema_defaults.get('street_address', '') }}"><br>
+            <input type="text" id="street_address" name="street_address"
+                value="{{ schema_defaults.get('street_address', '') }}"><br>
 
             <label for="city">City:</label>
             <input type="text" id="city" name="city" value="{{ schema_defaults.get('city', '') }}"><br>
 
             <label for="postal_code">Postal Code:</label>
-            <input type="text" id="postal_code" name="postal_code" value="{{ schema_defaults.get('postal_code', '') }}"><br>
+            <input type="text" id="postal_code" name="postal_code"
+                value="{{ schema_defaults.get('postal_code', '') }}"><br>
 
             <label for="country">Country:</label>
             <input type="text" id="country" name="country" value="{{ schema_defaults.get('country', '') }}"><br>
@@ -51,51 +58,67 @@
             <div id="selected_venues">
                 {% if schema_defaults.get('venue_type') %}
                 {% for venue in schema_defaults.get('venue_type').split(',') %}
-                <span class="selected-venue" style="background-color: rgba(255, 255, 255, 0.2); padding: 5px; margin: 5px; display: inline-block; border: 1px solid antiquewhite;">
+                <span class="selected-venue"
+                    style="background-color: rgba(255, 255, 255, 0.2); padding: 5px; margin: 5px; display: inline-block; border: 1px solid antiquewhite;">
                     {{ venue }}
                 </span>
                 {% endfor %}
                 {% endif %}
             </div>
-            <input type="hidden" id="venue_type_list" name="venue_type_list" value="{{ schema_defaults.get('venue_type', '') }}">
+            <input type="hidden" id="venue_type_list" name="venue_type_list"
+                value="{{ schema_defaults.get('venue_type', '') }}">
             <br>
 
             <!-- Accessibility -->
             <label for="accessibility">Accessibility:</label>
             <select id="accessibility" name="accessibility">
-                <option value="WheelchairAccessible" {% if schema_defaults.get('accessibility')=='WheelchairAccessible' %}selected{% endif %}>Wheelchair Accessible</option>
-                <option value="NotWheelchairAccessible" {% if schema_defaults.get('accessibility')=='NotWheelchairAccessible' %}selected{% endif %}>Not Wheelchair Accessible</option>
-                <option value="PartialWheelchairAccess" {% if schema_defaults.get('accessibility')=='PartialWheelchairAccess' %}selected{% endif %}>Partial Wheelchair Access</option>
+                <option value="WheelchairAccessible" {% if schema_defaults.get('accessibility')=='WheelchairAccessible'
+                    %}selected{% endif %}>Wheelchair Accessible</option>
+                <option value="NotWheelchairAccessible" {% if
+                    schema_defaults.get('accessibility')=='NotWheelchairAccessible' %}selected{% endif %}>Not Wheelchair
+                    Accessible</option>
+                <option value="PartialWheelchairAccess" {% if
+                    schema_defaults.get('accessibility')=='PartialWheelchairAccess' %}selected{% endif %}>Partial
+                    Wheelchair Access</option>
             </select><br>
 
             <!-- Default Image -->
             <label for="default_image">Default Image:</label>
             <input type="file" id="default_image" name="default_image" accept="image/*"><br>
             {% if schema_defaults.get('default_image') %}
-            <img src="{{ url_for('static', filename='uploads/' + schema_defaults.get('default_image')) }}" alt="Default Image" width="100"><br>
+            <img src="{{ url_for('static', filename='uploads/' + schema_defaults.get('default_image')) }}"
+                alt="Default Image" width="100"><br>
             {% endif %}
 
             <!-- Contact Information -->
             <label for="contact_email">Contact Email:</label>
-            <input type="text" id="contact_email" name="contact_email" value="{{ schema_defaults.get('contact_email', '') }}"><br>
+            <input type="text" id="contact_email" name="contact_email"
+                value="{{ schema_defaults.get('contact_email', '') }}"><br>
 
             <label for="contact_phone">Contact Phone:</label>
-            <input type="text" id="contact_phone" name="contact_phone" value="{{ schema_defaults.get('contact_phone', '') }}"><br>
+            <input type="text" id="contact_phone" name="contact_phone"
+                value="{{ schema_defaults.get('contact_phone', '') }}"><br>
 
             <!-- Opening Times -->
             <h3>Opening Times</h3>
             {% for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] %}
             <label for="{{ day }}_status">{{ day.capitalize() }} Status:</label>
             <select id="{{ day }}_status" name="{{ day }}_status" onchange="toggleOpeningTimes('{{ day }}')">
-                <option value="closed" {% if schema_defaults.get(day + '_status' )=='closed' %}selected{% endif %}>Closed</option>
-                <option value="open" {% if schema_defaults.get(day + '_status' )=='open' %}selected{% endif %}>Open</option>
-                <option value="by_appointment" {% if schema_defaults.get(day + '_status' )=='by_appointment' %}selected{% endif %}>By Appointment</option>
+                <option value="closed" {% if schema_defaults.get(day + '_status' )=='closed' %}selected{% endif %}>
+                    Closed</option>
+                <option value="open" {% if schema_defaults.get(day + '_status' )=='open' %}selected{% endif %}>Open
+                </option>
+                <option value="by_appointment" {% if schema_defaults.get(day + '_status' )=='by_appointment'
+                    %}selected{% endif %}>By Appointment</option>
             </select><br>
-            <div id="{{ day }}_times" style="display: {% if schema_defaults.get(day + '_status') == 'open' %}block{% else %}none{% endif %};">
+            <div id="{{ day }}_times"
+                style="display: {% if schema_defaults.get(day + '_status') == 'open' %}block{% else %}none{% endif %};">
                 <label for="{{ day }}_opening_time">{{ day.capitalize() }} Opening:</label>
-                <input type="time" id="{{ day }}_opening_time" name="{{ day }}_opening_time" value="{{ schema_defaults.get(day + '_opening_time', '') }}">
+                <input type="time" id="{{ day }}_opening_time" name="{{ day }}_opening_time"
+                    value="{{ schema_defaults.get(day + '_opening_time', '') }}">
                 <label for="{{ day }}_closing_time">Closing:</label>
-                <input type="time" id="{{ day }}_closing_time" name="{{ day }}_closing_time" value="{{ schema_defaults.get(day + '_closing_time', '') }}"><br><br>
+                <input type="time" id="{{ day }}_closing_time" name="{{ day }}_closing_time"
+                    value="{{ schema_defaults.get(day + '_closing_time', '') }}"><br><br>
             </div>
             {% endfor %}
 
@@ -147,7 +170,8 @@
                 <div id="drinksSizes">
                     <strong>Volume Options (optional):</strong>
                     <div id="drinksSizesContainer"></div>
-                    <button type="button" onclick="addSizeRow('drinksSizesContainer', 'drinks')">Add Volume Option</button>
+                    <button type="button" onclick="addSizeRow('drinksSizesContainer', 'drinks')">Add Volume
+                        Option</button>
                 </div>
             </div>
             <!-- Clothes Fields -->
@@ -272,7 +296,8 @@
 </div>
 
 <!-- Modal for full image display -->
-<div id="modalOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); align-items:center; justify-content:center;">
+<div id="modalOverlay"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); align-items:center; justify-content:center;">
     <div id="modalContent" style="position:relative;">
         <img id="modalImage" style="max-width:90vw; max-height:90vh;" alt="Full Image">
         <button id="modalClose" style="position:absolute; top:10px; right:10px;">Close</button>
@@ -286,6 +311,7 @@
         align-items: flex-start;
         gap: 20px;
     }
+
     /* Left Column (Setup Form) */
     #list {
         background-color: #043368c9;
@@ -293,6 +319,7 @@
         padding: 10px;
         color: antiquewhite;
     }
+
     /* Middle Column (Items for Sale) */
     .drinks {
         padding: 10px;
@@ -301,6 +328,7 @@
         max-width: 700px;
         color: antiquewhite;
     }
+
     /* Right Column (Recurring Events) */
     .events {
         padding: 10px;
@@ -308,10 +336,15 @@
         color: antiquewhite;
         max-width: 400px;
     }
-    .events h1, .events h2, .events h3, .events h4 {
+
+    .events h1,
+    .events h2,
+    .events h3,
+    .events h4 {
         color: antiquewhite;
         text-shadow: none;
     }
+
     /* Fourth Column (Picture Archive) */
     .archive {
         padding: 10px;
@@ -319,29 +352,41 @@
         color: antiquewhite;
         max-width: 400px;
     }
-    .archive h1, .archive h2, .archive h3 {
+
+    .archive h1,
+    .archive h2,
+    .archive h3 {
         color: antiquewhite;
         text-shadow: none;
     }
+
     /* Dynamic Fields */
-    #drinksFields, #clothesFields, #snacksFields, #imageField {
+    #drinksFields,
+    #clothesFields,
+    #snacksFields,
+    #imageField {
         margin: 10px 0;
         padding: 10px;
         border: 1px solid #ddd;
         display: none;
     }
+
     .size-row {
         margin-bottom: 5px;
     }
+
     .edit-button {
         margin-left: 10px;
         cursor: pointer;
         color: blue;
         text-decoration: underline;
     }
-    #itemsPreview, #eventsPreview {
+
+    #itemsPreview,
+    #eventsPreview {
         display: none;
     }
+
     /* Modal Styles */
     #modalOverlay {
         display: flex;
@@ -360,61 +405,77 @@
      * Items Functions (saveItem, clearItemForm, toggleFields, addSizeRow, renderItems, removeItem, editItem)
      ***********************************************************/
     function saveItem() {
+        // Build the basic item data from the form fields.
         const name = document.getElementById("itemName").value.trim() || "Unnamed";
         const type = document.getElementById("itemType").value;
         const basePrice = document.getElementById("basePrice").value.trim() || "";
+
+        // Initialize an object to store in the DB.
         let itemData = {
             name: name,
             type: type,
             basePrice: basePrice,
-            alcoholic: false,
-            volume: "",
-            sizes: [],
-            imageDataUrl: currentImageDataUrl
+            alcoholic: (type === "drinks") ? document.getElementById("itemAlcoholic").checked : false,
+            volume: (type === "drinks") ? document.getElementById("itemVolume").value.trim() : "",
+            sizes: [], // We'll fill this below.
+            user_name: "exampleUser" // Replace with real user if available.
         };
+
+        // Gather dynamic size/price rows depending on the item type.
         if (type === "drinks") {
-            itemData.alcoholic = document.getElementById("itemAlcoholic").checked;
-            itemData.volume = document.getElementById("itemVolume").value.trim();
-            const drinksSizesContainer = document.getElementById("drinksSizesContainer");
-            const sizeRows = drinksSizesContainer.querySelectorAll(".size-row");
-            sizeRows.forEach(row => {
-                const sizeValue = row.querySelector(".size-label").value.trim();
-                const sizePrice = row.querySelector(".size-price").value.trim();
-                if (sizePrice) {
-                    itemData.sizes.push({ label: sizeValue, price: sizePrice });
+            const rows = document.querySelectorAll("#drinksSizesContainer .size-row");
+            rows.forEach(row => {
+                const label = row.querySelector(".size-label").value.trim();
+                const price = row.querySelector(".size-price").value.trim();
+                if (label || price) {
+                    itemData.sizes.push({ label, price });
                 }
             });
         }
         else if (type === "clothes") {
-            const clothesSizesContainer = document.getElementById("clothesSizesContainer");
-            const sizeRows = clothesSizesContainer.querySelectorAll(".size-row");
-            sizeRows.forEach(row => {
-                const sizeLabel = row.querySelector(".size-label").value.trim();
-                const sizePrice = row.querySelector(".size-price").value.trim();
-                if (sizePrice) {
-                    itemData.sizes.push({ label: sizeLabel, price: sizePrice });
+            const rows = document.querySelectorAll("#clothesSizesContainer .size-row");
+            rows.forEach(row => {
+                const label = row.querySelector(".size-label").value.trim();
+                const price = row.querySelector(".size-price").value.trim();
+                if (label || price) {
+                    itemData.sizes.push({ label, price });
                 }
             });
         }
         else if (type === "snacks") {
-            const snacksSizesContainer = document.getElementById("snacksSizesContainer");
-            const sizeRows = snacksSizesContainer.querySelectorAll(".size-row");
-            sizeRows.forEach(row => {
-                const weight = row.querySelector(".size-label").value.trim();
-                const sizePrice = row.querySelector(".size-price").value.trim();
-                if (sizePrice) {
-                    itemData.sizes.push({ label: weight, price: sizePrice });
+            const rows = document.querySelectorAll("#snacksSizesContainer .size-row");
+            rows.forEach(row => {
+                const label = row.querySelector(".size-label").value.trim();
+                const price = row.querySelector(".size-price").value.trim();
+                if (label || price) {
+                    itemData.sizes.push({ label, price });
                 }
             });
         }
-        if (editIndex === null) {
-            items.push(itemData);
-        } else {
-            items[editIndex] = itemData;
-        }
-        renderItems();
-        clearItemForm();
+        // If type is "food", "merch", or "other", you can skip or add similar logic if you want size-based options there.
+
+        // If you want to handle an uploaded image as base64 data:
+        // itemData.imageDataUrl = currentImageDataUrl; // from your file input logic
+
+        // Finally, save to the DB by calling the new endpoint.
+        fetch("/add_item", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(itemData)
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Item saved to DB");
+                    renderItems();  // or loadItems() if you are re-fetching from DB
+                    clearItemForm();
+                } else {
+                    alert("Error saving item: " + data.message);
+                }
+            })
+            .catch(error => console.error("Error:", error));
     }
+
     function clearItemForm() {
         document.getElementById("itemName").value = "";
         document.getElementById("itemType").value = "drinks";
@@ -432,6 +493,7 @@
         editIndex = null;
         toggleFields();
     }
+
     function toggleFields() {
         const type = document.getElementById("itemType").value;
         document.getElementById("drinksFields").style.display = (type === "drinks") ? "block" : "none";
@@ -440,6 +502,7 @@
         const imageField = document.getElementById("imageField");
         imageField.style.display = (type === "merch" || type === "clothes" || type === "other") ? "block" : "none";
     }
+
     function addSizeRow(containerId, category) {
         const container = document.getElementById(containerId);
         let innerHTML = "";
@@ -467,91 +530,103 @@
         row.innerHTML = innerHTML;
         container.appendChild(row);
     }
+
     function renderItems() {
-        const previewContainer = document.getElementById("itemsPreview");
-        const groups = ["group-drinks-alcoholic", "group-drinks-non-alcoholic", "group-snacks", "group-food", "group-clothes", "group-merch", "group-other"];
-        groups.forEach(groupId => {
-            let groupEl = document.getElementById(groupId);
-            if (groupEl) {
-                groupEl.querySelector("ul").innerHTML = "";
-                groupEl.style.display = "none";
-            }
-        });
-        if (items.length === 0) {
-            previewContainer.style.display = "none";
-            return;
-        } else {
-            previewContainer.style.display = "block";
+    // Get the preview container element
+    const previewContainer = document.getElementById("itemsPreview");
+    // Define group element IDs for each item type
+    const groups = [
+        "group-drinks-alcoholic",
+        "group-drinks-non-alcoholic",
+        "group-snacks",
+        "group-food",
+        "group-clothes",
+        "group-merch",
+        "group-other"
+    ];
+    // Clear each group's list and hide groups initially
+    groups.forEach(groupId => {
+        let groupEl = document.getElementById(groupId);
+        if (groupEl) {
+            groupEl.querySelector("ul").innerHTML = "";
+            groupEl.style.display = "none";
         }
-        items.forEach((item, index) => {
-            let groupId = "";
-            if (item.type === "drinks") {
-                groupId = item.alcoholic ? "group-drinks-alcoholic" : "group-drinks-non-alcoholic";
-            } else if (item.type === "snacks") {
-                groupId = "group-snacks";
-            } else if (item.type === "food") {
-                groupId = "group-food";
-            } else if (item.type === "clothes") {
-                groupId = "group-clothes";
-            } else if (item.type === "merch") {
-                groupId = "group-merch";
+    });
+    // Hide the preview container if there are no items
+    if (items.length === 0) {
+        previewContainer.style.display = "none";
+        return;
+    } else {
+        previewContainer.style.display = "block";
+    }
+    // Loop through each item to render it
+    items.forEach((item, index) => {
+        let groupId = "";
+        // Access type from the description object
+        const itemType = item.description.type;
+        if (itemType === "drinks") {
+            groupId = item.description.alcoholic ? "group-drinks-alcoholic" : "group-drinks-non-alcoholic";
+        } else if (itemType === "snacks") {
+            groupId = "group-snacks";
+        } else if (itemType === "food") {
+            groupId = "group-food";
+        } else if (itemType === "clothes") {
+            groupId = "group-clothes";
+        } else if (itemType === "merch") {
+            groupId = "group-merch";
+        } else {
+            groupId = "group-other";
+        }
+        const ul = document.querySelector(`#${groupId} ul`);
+        document.getElementById(groupId).style.display = "block";
+
+        let details = "";
+        if (itemType === "drinks") {
+            if (item.description.sizes && item.description.sizes.length > 0) {
+                let optionsHTML = item.description.sizes.map(s => {
+                    let label = s.label ? s.label + "l: " : "";
+                    return label + `${s.price}€`;
+                }).join("<br>");
+                details = "<br>" + optionsHTML;
             } else {
-                groupId = "group-other";
-            }
-            const ul = document.querySelector(`#${groupId} ul`);
-            document.getElementById(groupId).style.display = "block";
-            let details = "";
-            if (item.basePrice) {
-                details += `Price: ${item.basePrice}€`;
-            }
-            if (item.type === "drinks") {
-                details += details ? " | " : "";
-                details += item.alcoholic ? "Alcoholic" : "Non-Alcoholic";
-                if (item.volume) {
-                    details += `, Volume: ${item.volume}L`;
+                details = item.description.alcoholic ? "Alcoholic" : "Non-Alcoholic";
+                if (item.description.volume) {
+                    details += `, Volume: ${item.description.volume}L`;
                 }
             }
-            if (item.sizes && item.sizes.length > 0) {
-                const sizeStrings = item.sizes.map(s => {
-                    let label = s.label ? s.label + ": " : "";
-                    if (item.type === "drinks") {
-                        return label + `${s.price} L`;
-                    } else if (item.type === "snacks") {
-                        return label + `${s.price} g`;
-                    } else {
-                        return label + `${s.price}€`;
-                    }
-                });
-                details += details ? " | " : "";
-                details += "Options: " + sizeStrings.join(", ");
-            }
-            const li = document.createElement("li");
+        } else if (item.description.sizes && item.description.sizes.length > 0) {
+            const sizeStrings = item.description.sizes.map(s => {
+                let label = s.label ? s.label + ": " : "";
+                return label + `${s.price}€`;
+            });
+            details = "Options: " + sizeStrings.join(", ");
+        }
+        const li = document.createElement("li");
+        if (itemType === "drinks") {
+            li.innerHTML = item.name + " (" + details + ")";
+        } else {
             li.textContent = item.name + (details ? ` (${details})` : "");
-            if (item.imageDataUrl) {
-                const thumb = document.createElement("img");
-                thumb.src = item.imageDataUrl;
-                thumb.style.maxWidth = "50px";
-                thumb.style.marginLeft = "10px";
-                li.appendChild(thumb);
-            }
-            const editLink = document.createElement("span");
-            editLink.className = "edit-button";
-            editLink.textContent = " Edit ";
-            editLink.onclick = () => editItem(index);
-            li.appendChild(editLink);
-            const removeLink = document.createElement("span");
-            removeLink.className = "edit-button";
-            removeLink.style.color = "red";
-            removeLink.textContent = " Remove";
-            removeLink.onclick = () => removeItem(index);
-            li.appendChild(removeLink);
-            ul.appendChild(li);
-        });
-    }
+        }
+        const editLink = document.createElement("span");
+        editLink.className = "edit-button";
+        editLink.textContent = " Edit ";
+        editLink.onclick = () => editItem(index);
+        li.appendChild(editLink);
+        const removeLink = document.createElement("span");
+        removeLink.className = "edit-button";
+        removeLink.style.color = "red";
+        removeLink.textContent = " Remove";
+        removeLink.onclick = () => removeItem(index);
+        li.appendChild(removeLink);
+        ul.appendChild(li);
+    });
+}
+
     function removeItem(index) {
         items.splice(index, 1);
         renderItems();
     }
+
     function editItem(index) {
         editIndex = index;
         const item = items[index];
@@ -635,7 +710,7 @@
     });
 
     /***********************************************************
-     * Original Setup Form Utilities
+     * Original Setup Form Utilities (toggleOpeningTimes)
      ***********************************************************/
     function addVenueType() {
         const venueSelect = document.getElementById("venue_type");
@@ -678,7 +753,7 @@
      ***********************************************************/
     let events = [];
     let currentEventLogoDataUrl = "";
-    document.getElementById("eventLogo").addEventListener("change", function(event) {
+    document.getElementById("eventLogo").addEventListener("change", function (event) {
         const file = event.target.files[0];
         if (!file) {
             currentEventLogoDataUrl = "";
@@ -686,7 +761,7 @@
             return;
         }
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = function (e) {
             currentEventLogoDataUrl = e.target.result;
             const preview = document.getElementById("eventLogoPreview");
             preview.src = currentEventLogoDataUrl;
@@ -770,7 +845,6 @@
                 logoThumb.style.maxWidth = "50px";
                 logoThumb.style.marginLeft = "10px";
                 li.appendChild(logoThumb);
-                // Download button for event logo
                 const downloadBtn = document.createElement("button");
                 downloadBtn.textContent = "Download Logo";
                 downloadBtn.onclick = (e) => {
@@ -806,7 +880,7 @@
             return;
         }
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = function (e) {
             const picDataUrl = e.target.result;
             archivePics.push({ name: name, category: category, imageDataUrl: picDataUrl });
             renderArchive();
@@ -820,20 +894,18 @@
         const container = document.getElementById("archiveContainer");
         container.innerHTML = "";
         if (archivePics.length === 0) return;
-        // Group pictures by category
         const groups = {};
         archivePics.forEach(pic => {
             if (!groups[pic.category]) groups[pic.category] = [];
             groups[pic.category].push(pic);
         });
-        // For each category, create a collapsible section
         Object.keys(groups).forEach(category => {
             const section = document.createElement("div");
             section.className = "archive-section";
             const header = document.createElement("h3");
             header.textContent = category;
             header.style.cursor = "pointer";
-            header.onclick = function() {
+            header.onclick = function () {
                 const content = this.nextElementSibling;
                 content.style.display = (content.style.display === "none") ? "block" : "none";
             };
@@ -849,7 +921,7 @@
                 thumb.style.maxWidth = "100px";
                 thumb.style.margin = "5px";
                 thumb.style.cursor = "pointer";
-                thumb.onclick = function() {
+                thumb.onclick = function () {
                     openModal(pic.imageDataUrl);
                 };
                 picDiv.appendChild(thumb);
@@ -883,7 +955,7 @@
         modalImage.src = imageUrl;
         modalOverlay.style.display = "flex";
     }
-    document.getElementById("modalOverlay").addEventListener("click", function(e) {
+    document.getElementById("modalOverlay").addEventListener("click", function (e) {
         if (e.target === this || e.target.id === "modalClose") {
             this.style.display = "none";
         }
@@ -905,6 +977,27 @@
             document.getElementById(`${day}_closing_time`).required = false;
         }
     }
+
+    // Function to load items from the DB via the /get_items endpoint
+    function loadItems() {
+        fetch("/get_items")
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    items = data.items;  // items is the global array used by renderItems()
+                    renderItems();
+                } else {
+                    console.error("Error loading items:", data.message);
+                }
+            })
+            .catch(error => console.error("Error:", error));
+    }
+
+    // Ensure items are loaded when the DOM is ready
+    document.addEventListener("DOMContentLoaded", () => {
+        loadItems();
+    });
+
 
     window.addEventListener("DOMContentLoaded", () => {
         toggleFields();

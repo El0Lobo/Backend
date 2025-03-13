@@ -1,22 +1,48 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash
+from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
 from routes.utils import jwtVerify
 import os
 import json
 import logging
+import datetime
+import sqlite3
 
 setup_bp = Blueprint('setup', __name__)
 
+DB_FILE = 'database.db'
 UPLOAD_FOLDER = 'static/uploads'
 
-# Load the default schema settings from a configuration file
-def load_schema_defaults():
-    """Load the default schema settings from a configuration file."""
-    config_file = "schema_defaults.json"
-    if os.path.exists(config_file):
-        with open(config_file, 'r') as f:
-            return json.load(f)
-    return {}
+def today_date():
+    # Returns the current date as a string in DD-MM-YYYY format
+    return datetime.datetime.now().strftime("%d-%m-%Y")
 
+# -----------------------------------------------------------------
+# Database Table Creation
+# -----------------------------------------------------------------
+def create_stuff_table():
+    """
+    Creates the stuff table if it does not exist.
+    The table stores items for sale without a 'bought' column.
+    """
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS stuff_to_sell (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    title TEXT NOT NULL,
+                    description TEXT NOT NULL,  -- JSON string containing detailed item information
+                    image_path TEXT,
+                    date_added TEXT NOT NULL,
+                    user_name TEXT NOT NULL,
+                    is_intern BOOLEAN NOT NULL DEFAULT 0
+                )''')
+    conn.commit()
+    conn.close()
+
+# Call the function to ensure the table exists
+create_stuff_table()
+
+# -----------------------------------------------------------------
+# Setup Route
+# -----------------------------------------------------------------
 @setup_bp.route('/setup', methods=['GET', 'POST'])
 def setup():
     user = jwtVerify(request.cookies)
@@ -24,7 +50,12 @@ def setup():
         return redirect(url_for('login.login'))
 
     config_file = "schema_defaults.json"
-    schema_defaults = load_schema_defaults()
+    # Load defaults from JSON config file
+    if os.path.exists(config_file):
+        with open(config_file, 'r') as f:
+            schema_defaults = json.load(f)
+    else:
+        schema_defaults = {}
 
     if request.method == 'POST':
         # Save file uploads and get file names
@@ -55,7 +86,6 @@ def setup():
             "event_status": request.form.get("event_status"),
             "contact_email": request.form.get("contact_email"),
             "contact_phone": request.form.get("contact_phone"),
-
             # Social Media Links
             "facebook": request.form.get("facebook"),
             "instagram": request.form.get("instagram"),
@@ -75,12 +105,9 @@ def setup():
             if day_status == "open":
                 opening_time = request.form.get(f"{day}_opening_time")
                 closing_time = request.form.get(f"{day}_closing_time")
-                
-                # Backend validation to ensure both times are provided
                 if not opening_time or not closing_time:
                     flash(f"Please provide both opening and closing times for {day.capitalize()}.", 'danger')
                     return render_template('setup.html', schema_defaults=schema_defaults, active_page='Setup', title='Setup')
-
                 schema_defaults[f"{day}_opening_time"] = opening_time
                 schema_defaults[f"{day}_closing_time"] = closing_time
             elif day_status == "closed":
@@ -90,7 +117,6 @@ def setup():
                 schema_defaults[f"{day}_opening_time"] = "ByAppointment"
                 schema_defaults[f"{day}_closing_time"] = "ByAppointment"
 
-        # Write updated values to the JSON file
         try:
             with open(config_file, 'w') as f:
                 json.dump(schema_defaults, f, indent=4)
@@ -101,3 +127,61 @@ def setup():
         return render_template('setup.html', schema_defaults=schema_defaults, active_page='Setup', title='Setup')
 
     return render_template('setup.html', schema_defaults=schema_defaults, active_page='Setup', title='Setup')
+
+# -----------------------------------------------------------------
+# Add Item Route
+# -----------------------------------------------------------------
+@setup_bp.route('/add_item', methods=['POST'])
+def add_item():
+    data = request.get_json()
+    title = data.get("name", "Unnamed Item")
+    description = json.dumps(data)
+    image_path = data.get("imageDataUrl", "")
+    date_added = ""  # Not needed
+    user_name = data.get("user_name", "unknown")
+    is_intern = 0
+
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO stuff_to_sell (title, description, image_path, date_added, user_name, is_intern) VALUES (?, ?, ?, ?, ?, ?)",
+            (title, description, image_path, date_added, user_name, is_intern)
+        )
+        conn.commit()
+        row_id = c.lastrowid
+        conn.close()
+        return jsonify({"success": True, "message": "Item saved to DB", "id": row_id})
+    except sqlite3.Error as e:
+        return jsonify({"success": False, "message": f"Database error: {e}"})
+
+@setup_bp.route('/get_items', methods=['GET'])
+def get_items():
+    """
+    Endpoint to retrieve all items from the 'stuff' table.
+    The description field is stored as a JSON string.
+    """
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        c = conn.cursor()
+        c.execute("SELECT id, title, description, image_path, user_name, is_intern FROM stuff_to_sell")
+        rows = c.fetchall()
+        items = []
+        for row in rows:
+            # Parse the description JSON string
+            try:
+                description = json.loads(row[2])
+            except Exception:
+                description = {}
+            items.append({
+                "id": row[0],
+                "name": row[1],
+                "description": description,
+                "imageDataUrl": row[3],
+                "user_name": row[4],
+                "is_intern": row[5]
+            })
+        conn.close()
+        return jsonify({"success": True, "items": items})
+    except sqlite3.Error as e:
+        return jsonify({"success": False, "message": str(e)})

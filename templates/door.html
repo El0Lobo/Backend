@@ -1,0 +1,751 @@
+{% extends "base.html" %}
+
+{% block content %}
+<script src="https://d3js.org/d3.v7.min.js"></script>
+
+
+<div style="display: flex; justify-content: center; align-items: flex-start; gap: 40px;">
+
+    <!-- Left Column: Guest and Banned Lists -->
+    <div style="width: 300px;">
+        <!-- Guest List Section -->
+        <button style="background-color: #56bd56; font-size: x-large; margin-bottom: 10px;" 
+                class="dropdown-button" onclick="toggleGuestDropdown()">
+            Gästeliste <span id="guest-arrow">▼</span>
+        </button>
+        <div id="guest-dropdown" class="dropdown-content" style="display:none;">
+            {% if guest_data %}
+                <ul id="guest-list" class="banned-list">
+                    {% for guest in guest_data %}
+                    <li>
+                        <span id="guest-{{ guest.name|replace(' ', '-') }}">{{ guest.name }} - {{ guest.annotation }}</span>
+                        {% if session.get('role') in ['Admin', 'Vorstand'] %}
+                        <button onclick="removeGuest('{{ guest.name }}')" class="checkmark-button">✔</button>
+                        <button onclick="editGuest('{{ guest.name }}', '{{ guest.annotation }}')" class="checkmark-button">✎</button>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p style="text-align:center; color:#888;">Keine Gäste für diesen Tag</p>
+            {% endif %}
+            
+            <!-- Add Guest Form (always visible) -->
+            {% if session.get('role') in ['Admin', 'Vorstand'] %}
+            <div id="add-guest-form" class="add-form" style="display:block; margin-top:10px;">
+                <h3>Gast hinzufügen</h3>
+                <label for="guest-name">Name:</label>
+                <input type="text" id="guest-name">
+                <label for="guest-annotation">Anmerkung:</label>
+                <input type="text" id="guest-annotation">
+                <label for="guest-date">Datum:</label>
+                <input type="date" id="guest-date" value="{{ selected_date }}">
+                <button onclick="submitGuest()" class="submit-button">Hinzufügen</button>
+                <button onclick="clearGuestList()" class="clear-button" style="margin-top:10px;">Gästeliste löschen</button>
+            </div>
+            {% endif %}
+            <br>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <label for="guest-date-select" style="font-size: 1.2em;">Gästeliste für Datum:</label>
+                <input type="date" id="guest-date-select" value="{{ selected_date }}" onchange="changeGuestDate()">
+            </div>
+        </div>
+
+        <!-- Banned List Section -->
+        <button style="background-color: #752525; font-size: x-large; margin-top: 20px;" 
+                class="dropdown-button" onclick="toggleBannedDropdown()">
+            Ungebetene Gäste <span id="banned-arrow">▼</span>
+        </button>
+        <div id="banned-dropdown" class="dropdown-content" style="display:none;">
+            {% if banned_data %}
+                <ul id="banned-list" class="banned-list">
+                    {% for banned in banned_data %}
+                    <li>
+                        <span id="banned-{{ banned.name|replace(' ', '-') }}">{{ banned.name }} - {{ banned.reason }} ({{ banned.date }})</span>
+                        {% if banned.social_link %}
+                        <a href="{{ banned.social_link }}" target="_blank">Social</a>
+                        {% endif %}
+                        {% if session.get('role') in ['Admin', 'Vorstand'] %}
+                        <button onclick="removeBanned('{{ banned.name }}')" class="delete-button">X</button>
+                        <button onclick="editBanned('{{ banned.name }}', '{{ banned.reason }}', '{{ banned.social_link }}', '{{ banned.date }}', '{{ banned.description }}', '{{ banned.ban_until }}')" class="delete-button">✎</button>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p style="text-align:center; color:#888;">Keine ungebetenen Gäste</p>
+            {% endif %}
+            
+            <!-- Add Banned Person Form (always visible) -->
+            {% if session.get('role') in ['Admin', 'Vorstand'] %}
+            <div id="add-banned-form" class="add-form" style="display:block; margin-top:10px;">
+                <h3>Ungebetene Person hinzufügen</h3>
+                <label for="banned-name">Name:</label>
+                <input type="text" id="banned-name">
+                <label for="banned-reason">Grund:</label>
+                <input type="text" id="banned-reason">
+                <label for="banned-description">Beschreibung:</label>
+                <input type="text" id="banned-description">
+                <label for="banned-social-link">Link zu Social Media:</label>
+                <input type="url" id="banned-social-link">
+                <label for="banned-date">Datum:</label>
+                <input type="date" id="banned-date" value="{{ selected_date }}">
+                <label for="banned-ban_until">Ban Dauer:</label>
+                <select id="banned-ban_until" onchange="toggleBanUntilDate()">
+                    <option value="permanent">Permanent</option>
+                    <option value="1month">1 Monat</option>
+                    <option value="6months">6 Monate</option>
+                    <option value="1year">1 Jahr</option>
+                    <option value="custom">Bis Datum</option>
+                </select>
+                <input type="date" id="banned-custom-date" style="display:none;">
+                <button onclick="submitBannedPerson()" class="submit-button">Hinzufügen</button>
+                {% if user.role not in ['Admin', 'Vorstand'] %}
+                <p style="font-size: 0.9em; color: #555;">Deine Eingabe wird als Vorschlag gespeichert.</p>
+                {% endif %}
+            </div>
+            {% endif %}
+            {% if user.role in ['Admin', 'Vorstand'] and banned_suggestions %}
+            <hr>
+            <h3>Ban-Vorschläge</h3>
+            <ul id="banned-suggestions-list" class="banned-list">
+                {% for suggestion in banned_suggestions %}
+                <li>
+                    <span>{{ suggestion.name }} - {{ suggestion.reason }} ({{ suggestion.date }}) - Vorschlag von {{ suggestion.submitted_by }}</span>
+                    <button onclick="approveBanned({{ suggestion.id }})" class="checkmark-button">✔</button>
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Center Column: Counter and Tally Container -->
+    <div class="counter-container" style="position: relative;">
+        <p style="font-size: 1.5em; margin: 0;">Maximale Kapazität: 180</p>
+        <p style="font-size: 1.5em; margin: 0;">Aktuelle Anzahl Personen:</p>
+
+        <!-- Normal Numeric Counter Display -->
+        <div id="counter" class="counter-display">0</div>
+        
+        <!-- Tally (Chalk) Element Section -->
+        <div id="tally-section" style="margin-top: 20px;">
+            <button onclick="toggleTally()" style="padding: 5px 10px; cursor: pointer;">Toggle Tally</button>
+            <div id="tally-container" style="display: none; margin-top: 10px;"></div>
+        </div>
+        
+        <!-- IN and OUT Buttons -->
+        <div class="button-group">
+            <button onclick="addPerson()" class="counter-button in-button">
+                <img src="{{ url_for('static', filename='IN.png') }}" alt="Person kommt rein">
+            </button>
+            <button onclick="removePerson()" class="counter-button out-button">
+                <img src="{{ url_for('static', filename='OUT.png') }}" alt="Person geht raus">
+            </button>
+        </div>
+
+        <p style="font-size: 1.5em; margin-top: 20px;">Eintrittspreis: 10€</p>
+
+        <!-- Reset Button -->
+        <button onclick="resetCounter()" class="reset-button">&#x21bb;</button>
+
+        <!-- Highest Count Display Section -->
+        <div style="margin-top: 20px;">
+            <label for="highest-date-select" style="font-size: 1.2em;">Zeige höchste Anzahl für:</label>
+            <input type="date" id="highest-date-select" value="{{ selected_date }}" onchange="updateHighestDisplay()">
+            <div id="highest-count-display" style="margin-top: 5px; font-size: 1.2em; color: #fff;"></div>
+        </div>
+    </div>
+    
+    <!-- Right Column: Clock and Date -->
+    <div style="width: 300px; text-align: center; font-weight: bold; text-shadow: 0 0 5px rgb(236, 221, 191), 0 0 10px rgb(236, 221, 191), 0 0 15px rgb(236, 221, 191), 0 0 20px rgb(236, 221, 191);">
+        <div id="date" style="font-size: 2em;"></div>
+        <div id="clock" style="font-size: 4em;"></div>
+    </div>
+    
+</div>
+
+<style>
+    /* Container and layout */
+    .counter-container {
+        background-color: rgba(0, 0, 51, 0.8);
+        padding: 30px;
+        border-radius: 10px;
+        text-align: center;
+        color: white;
+        width: 300px;
+    }
+    .counter-display {
+        font-size: 5em;
+        font-weight: bold;
+        margin: 20px 0;
+    }
+    .button-group {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+    }
+    /* Button styling with feedback */
+    .counter-button {
+        background-color: #d2c29bb2;
+        cursor: pointer;
+        transition: transform 0.1s ease, opacity 0.1s ease;
+        margin: 10px;
+        border-radius: 16px;
+        padding: 5px;
+    }
+    .counter-button img {
+        width: 80px;
+        height: 80px;
+    }
+    .counter-button:hover img {
+        opacity: 0.8;
+    }
+    .counter-button:active {
+        transform: scale(0.95);
+    }
+    /* Dropdown styling */
+    .dropdown-button {
+        background-color: #f0f0f0;
+        border: none;
+        padding: 10px;
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+    .dropdown-content {
+        margin-top: 10px;
+        background-color: #fff;
+        border-radius: 5px;
+        padding: 10px;
+        color: black;
+    }
+    .banned-list {
+        list-style-type: none;
+        padding: 0;
+    }
+    /* Add person form - always displayed */
+    .add-button,
+    .submit-button,
+    .clear-button {
+        background-color: #e0e0e0;
+        border: none;
+        padding: 10px;
+        width: 100%;
+        margin-top: 10px;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+    .add-form {
+        margin-top: 10px;
+    }
+    .add-form label {
+        display: block;
+        margin-top: 10px;
+        font-weight: bold;
+    }
+    .add-form input {
+        width: 100%;
+        padding: 8px;
+        margin-top: 5px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+    /* Style for checkmark and delete buttons */
+    .checkmark-button,
+    .delete-button {
+        background: none;
+        border: none;
+        font-size: 1.2em;
+        cursor: pointer;
+        color: #555;
+        margin-left: 10px;
+    }
+    .checkmark-button:hover {
+        color: green;
+    }
+    .delete-button:hover {
+        color: red;
+    }
+    .reset-button {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        background: none;
+        border: none;
+        font-size: 1.8em;
+        cursor: pointer;
+        color: #888;
+        transition: color 0.2s ease;
+    }
+    .reset-button:hover {
+        color: #000;
+    }
+</style>
+
+<script>
+    // ----- Tally (Chalk) Element Code -----
+    const tallyChart = () => {
+      let datum = 5; // default number of tally marks (will be overridden)
+      let strokeWidth = 0.5;
+
+      const tallyChart = (selection) => {
+        const id = Math.random().toString().slice(-3);
+        const numOctaves = Math.floor(Math.random() * 3) + 2;
+        const scale = Math.random() ** 0.5;
+
+        // Group individual tally marks into groups of 5 marks each.
+        const groups = Array(datum)
+          .fill()
+          .map((_, i) => i)
+          .reduce((acc, curr) => {
+            if (curr % 5 === 0) acc.push([]);
+            acc[acc.length - 1].push(curr);
+            return acc;
+          }, []);
+
+        // Now group these groups into rows of 5 groups (i.e. 25 marks per row).
+        const rows = groups.reduce((acc, group, i) => {
+          if (i % 5 === 0) acc.push([]);
+          acc[acc.length - 1].push(group);
+          return acc;
+        }, []);
+
+        const width = 5 * Math.min(5, groups.length);
+        const height = 5 * rows.length;
+
+        const svg = selection
+          .append("svg")
+          .attr("viewBox", `0 0 ${width} ${height}`);
+
+        svg
+          .attr("tabindex", "0")
+          .attr("role", "figure")
+          .append("title")
+          .text(() => datum);
+
+        const defs = svg.append("defs");
+
+        const filter = defs
+          .append("filter")
+          .attr("id", `filter-tally-${id}`)
+          .attr("filterUnits", "userSpaceOnUse");
+
+        filter
+          .append("feTurbulence")
+          .attr("type", "turbulence")
+          .attr("baseFrequency", "0.2")
+          .attr("numOctaves", numOctaves)
+          .attr("result", `turbulence-tally-${id}`);
+
+        filter
+          .append("feDisplacementMap")
+          .attr("in", "SourceGraphic")
+          .attr("in2", `turbulence-tally-${id}`)
+          .attr("scale", scale)
+          .attr("xChannelSelector", "R")
+          .attr("yChannelSelector", "G");
+
+        // Define 5 mark paths (first 4 are vertical strokes; the 5th is the diagonal strike-through)
+        for (let i = 0; i < 5; i++) {
+          defs.append("path")
+              .attr("id", `mark-tally-${id}-${i}`)
+              .attr("d", i < 4 ? `M ${i} 0 v 3` : "M -0.5 2.4 l 4 -1.8");
+        }
+
+        const container = svg
+          .append("g")
+          .attr("transform", "translate(1,1)")
+          .attr("filter", `url(#filter-tally-${id})`);
+
+        const groupMarks = container
+          .append("g")
+          .attr("fill", "none")
+          .attr("stroke", "currentColor")
+          .attr("stroke-width", strokeWidth)
+          .attr("stroke-linecap", "square");
+
+        // Render rows and groups
+        const rowsSelection = groupMarks.selectAll("g.row")
+          .data(rows)
+          .enter()
+          .append("g")
+          .attr("class", "row")
+          .attr("transform", (d, rowIndex) => `translate(0, ${5 * rowIndex})`);
+
+        rowsSelection.selectAll("g.group")
+          .data(d => d)
+          .enter()
+          .append("g")
+          .attr("class", "group")
+          .attr("transform", (d, groupIndex) => `translate(${5 * groupIndex}, 0)`)
+          .selectAll("use")
+          .data(d => d)
+          .enter()
+          .append("use")
+          .attr("href", (_, i) => `#mark-tally-${id}-${i}`);
+      };
+
+      tallyChart.datum = function (value) {
+        if (!arguments.length) return datum;
+        datum = value;
+        return this;
+      };
+
+      tallyChart.strokeWidth = function (value) {
+        if (!arguments.length) return strokeWidth;
+        strokeWidth = value;
+        return this;
+      };
+
+      return tallyChart;
+    };
+
+    // ----- Toggle between Numeric Counter and Tally View -----
+    function toggleTally() {
+      const tallyContainer = document.getElementById("tally-container");
+      const counterDisplay = document.getElementById("counter");
+      if(tallyContainer.style.display === "none" || tallyContainer.style.display === "") {
+         tallyContainer.style.display = "block";
+         counterDisplay.style.display = "none";
+         updateTally();
+      } else {
+         tallyContainer.style.display = "none";
+         counterDisplay.style.display = "block";
+      }
+    }
+
+    // Render the tally based on the current count
+    function updateTally() {
+      const tallyContainer = document.getElementById("tally-container");
+      if(tallyContainer.style.display === "block") {
+         d3.select("#tally-container").html("");
+         // Render the tally chart with the currentCount
+         const chart = tallyChart().datum(currentCount).strokeWidth(0.35);
+         d3.select("#tally-container").call(chart);
+      }
+    }
+    // ----- End Tally Code -----
+
+    // ----- Counter, Auto-Reset, and Highest Count Code -----
+    // Helper: Format Date as YYYY-MM-DD
+    function formatDate(date) {
+      return date.toISOString().slice(0,10);
+    }
+
+    // Check if the counter needs to be reset at 7 am
+    function checkResetCounter() {
+      let now = new Date();
+      let currentDay = formatDate(now);
+      // Get the stored last reset day
+      let lastReset = localStorage.getItem("counterLastReset");
+      // If no lastReset exists, set it to today
+      if (!lastReset) {
+        localStorage.setItem("counterLastReset", currentDay);
+        localStorage.setItem("highestCount_" + currentDay, 0);
+      }
+      // Determine 7 am today
+      let resetTime = new Date(now);
+      resetTime.setHours(7,0,0,0);
+      // If current day is different from lastReset and current time is past 7am, reset counter
+      if (currentDay !== lastReset && now >= resetTime) {
+         currentCount = 0;
+         localStorage.setItem("currentCount", currentCount);
+         localStorage.setItem("counterLastReset", currentDay);
+         localStorage.setItem("highestCount_" + currentDay, 0);
+      }
+    }
+
+    // Global variable for the counter; load from localStorage if available
+    let currentCount = localStorage.getItem("currentCount") ? parseInt(localStorage.getItem("currentCount")) : 0;
+
+    function updateCounterDisplay() {
+        document.getElementById("counter").textContent = currentCount;
+        localStorage.setItem("currentCount", currentCount);
+        updateTally();
+        // Update highest count for today if necessary
+        let now = new Date();
+        let currentDay = formatDate(now);
+        let highestKey = "highestCount_" + currentDay;
+        let highest = parseInt(localStorage.getItem(highestKey)) || 0;
+        if(currentCount > highest) {
+            highest = currentCount;
+            localStorage.setItem(highestKey, highest);
+        }
+        // If the highest date selector matches today, update the display as well
+        let highestElem = document.getElementById("highest-count-display");
+        let selectedHighDate = document.getElementById("highest-date-select").value;
+        if(selectedHighDate === currentDay && highestElem) {
+            highestElem.textContent = "Höchste Anzahl: " + highest;
+        }
+    }
+
+    function addPerson() {
+        if (currentCount < 180) {
+            currentCount++;
+            updateCounterDisplay();
+        } else {
+            alert("Maximale Kapazität erreicht!");
+        }
+    }
+    function removePerson() {
+        if (currentCount > 0) {
+            currentCount--;
+            updateCounterDisplay();
+        }
+    }
+    function resetCounter() {
+        currentCount = 0;
+        updateCounterDisplay();
+        alert("Counter has been reset.");
+    }
+
+    // ----- Highest Count Display for Selected Day -----
+    function updateHighestDisplay() {
+        let dateVal = document.getElementById("highest-date-select").value;
+        let highest = localStorage.getItem("highestCount_" + dateVal);
+        highest = highest ? highest : 0;
+        document.getElementById("highest-count-display").textContent = "Höchste Anzahl: " + highest;
+    }
+    // ----- End Highest Count Code -----
+
+    // Global variable for the selected guest date, initialized from the template
+    const selectedDate = "{{ selected_date }}";
+    function changeGuestDate() {
+        const newDate = document.getElementById("guest-date-select").value;
+        window.location.href = `/door?date=${newDate}`;
+    }
+
+    // ----- Dropdown Toggle Functions -----
+    function toggleGuestDropdown() {
+        const dropdown = document.getElementById("guest-dropdown");
+        const arrow = document.getElementById("guest-arrow");
+        dropdown.style.display = (dropdown.style.display === "block") ? "none" : "block";
+        arrow.textContent = dropdown.style.display === "block" ? "▲" : "▼";
+    }
+    function toggleBannedDropdown() {
+        const dropdown = document.getElementById("banned-dropdown");
+        const arrow = document.getElementById("banned-arrow");
+        dropdown.style.display = (dropdown.style.display === "block") ? "none" : "block";
+        arrow.textContent = dropdown.style.display === "block" ? "▲" : "▼";
+    }
+
+    // ----- Helper Functions for Ban Duration -----
+    // Add months to a date and return YYYY-MM-DD
+    function addMonths(date, months) {
+        let d = new Date(date);
+        d.setMonth(d.getMonth() + months);
+        return d.toISOString().slice(0,10);
+    }
+    // Toggle custom date input for ban duration
+    function toggleBanUntilDate() {
+        const select = document.getElementById("banned-ban_until");
+        const customDateInput = document.getElementById("banned-custom-date");
+        if (select.value === "custom") {
+            customDateInput.style.display = "block";
+        } else {
+            customDateInput.style.display = "none";
+        }
+    }
+
+    // ----- Submit Functions for Guests and Banned -----
+    function submitGuest() {
+        const name = document.getElementById("guest-name").value;
+        const annotation = document.getElementById("guest-annotation").value;
+        const date = document.getElementById("guest-date").value;
+        if (name && annotation && date) {
+            fetch("/add_guest", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, annotation, date })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Guest added to the list for " + data.date);
+                    location.reload();
+                } else {
+                    alert("Error adding guest: " + data.message);
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        } else {
+            alert("Please fill in all fields.");
+        }
+    }
+
+    function submitBannedPerson() {
+        const name = document.getElementById("banned-name").value;
+        const reason = document.getElementById("banned-reason").value;
+        const description = document.getElementById("banned-description").value;
+        const socialLink = document.getElementById("banned-social-link").value;
+        const date = document.getElementById("banned-date").value;
+        // Determine ban duration from dropdown
+        const banSelect = document.getElementById("banned-ban_until").value;
+        let ban_until;
+        if (banSelect === "permanent") {
+            ban_until = "permanent";
+        } else if (banSelect === "1month") {
+            ban_until = addMonths(new Date(), 1);
+        } else if (banSelect === "6months") {
+            ban_until = addMonths(new Date(), 6);
+        } else if (banSelect === "1year") {
+            ban_until = addMonths(new Date(), 12);
+        } else if (banSelect === "custom") {
+            ban_until = document.getElementById("banned-custom-date").value;
+        }
+        if (name && reason && date) {
+            fetch("/add_banned", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, reason, description, social_link: socialLink, date, ban_until })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const msg = data.message.includes("suggestion") ? "suggestion submitted" : "added";
+                    alert("Banned person " + msg + " for " + data.date);
+                    location.reload();
+                } else {
+                    alert("Error adding banned person: " + data.message);
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        } else {
+            alert("Please fill in all required fields.");
+        }
+    }
+
+    function removeGuest(name) {
+        fetch(`/remove_guest/${name}/${selectedDate}`, { method: "DELETE" })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert("Error removing guest");
+            }
+        })
+        .catch(error => console.error("Error:", error));
+    }
+
+    function clearGuestList() {
+        if (confirm("Are you sure you want to clear the entire guest list for " + selectedDate + "?")) {
+            fetch("/clear_guest_list", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ date: selectedDate })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert("Error clearing guest list");
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        }
+    }
+
+    function removeBanned(name) {
+        fetch(`/remove_banned/${name}`, { method: "DELETE" })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert("Error removing banned person");
+            }
+        })
+        .catch(error => console.error("Error:", error));
+    }
+
+    function approveBanned(suggestionId) {
+        fetch(`/approve_banned/${suggestionId}`, { method: "POST" })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert("Banned person approved");
+                location.reload();
+            } else {
+                alert("Error approving banned person: " + data.message);
+            }
+        })
+        .catch(error => console.error("Error:", error));
+    }
+
+    function editGuest(oldName, oldAnnotation) {
+        const newName = prompt("Neuer Name:", oldName);
+        const newAnnotation = prompt("Neue Anmerkung:", oldAnnotation);
+        if(newName && newAnnotation){
+            fetch("/edit_guest", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ old_name: oldName, date: selectedDate, new_name: newName, new_annotation: newAnnotation })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.success){
+                    alert("Guest updated successfully");
+                    location.reload();
+                } else {
+                    alert("Error updating guest: " + data.message);
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        }
+    }
+
+    function editBanned(oldName, oldReason, oldSocialLink, oldDate, oldDescription, oldBanUntil) {
+        const newName = prompt("Neuer Name:", oldName);
+        const newReason = prompt("Neuer Grund:", oldReason);
+        const newDescription = prompt("Neue Beschreibung:", oldDescription);
+        const newSocialLink = prompt("Neuer Social Link:", oldSocialLink);
+        const newDate = prompt("Neues Datum (YYYY-MM-DD):", oldDate);
+        const newBanUntil = prompt("Neues Ban-Enddatum (YYYY-MM-DD oder 'permanent'):", oldBanUntil);
+        if(newName && newReason && newDate && newBanUntil){
+            fetch("/edit_banned", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ old_name: oldName, new_name: newName, new_reason: newReason, new_description: newDescription, new_social_link: newSocialLink, new_date: newDate, new_ban_until: newBanUntil })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.success){
+                    alert("Banned entry updated successfully");
+                    location.reload();
+                } else {
+                    alert("Error updating banned entry: " + data.message);
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        }
+    }
+
+    function updateClockAndDate() {
+        const now = new Date();
+        document.getElementById("clock").textContent = now.toLocaleTimeString("de-DE", { timeZone: 'Europe/Berlin' });
+        const options = { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' };
+        const dateString = now.toLocaleDateString("de-DE", options);
+        document.getElementById("date").textContent = dateString;
+    }
+    // ----- End Script Functions -----
+
+    // On page load, check for reset and update displays.
+    document.addEventListener("DOMContentLoaded", function () {
+        checkResetCounter();
+        updateCounterDisplay();
+        updateHighestDisplay();
+    });
+
+    setInterval(updateClockAndDate, 1000);
+    updateClockAndDate();
+</script>
+
+{% endblock %}

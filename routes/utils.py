@@ -4,30 +4,42 @@ import random
 import sqlite3
 import bcrypt
 from functools import wraps
-from flask import request, redirect, url_for
+from flask import request, redirect, url_for, jsonify, session
 
+# JWT configuration
 JWT_KEY = "YOUR_SECRET_KEY"
 JWT_ALGO = "HS256"
 JWT_ISS = "Backend"
 
+# Database file and folder for JSON data
 DB_FILE = 'database.db'
 JSON_FOLDER = 'json_data'
 
-# Generate JWT Token
+#############################
+# JWT Utility Functions
+#############################
+
 def jwtSign(email, name, role):
+    """
+    Generate a JWT token with a random JWT ID and a 1-hour expiration.
+    """
     rnd = "".join(random.choice("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz~!@#$%^_-") for i in range(24))
     now = int(time.time())
-    return jwt.encode({
-        "iat": now,  # Issued at
-        "nbf": now,  # Not before
-        "exp": now + 3600,  # Expiry time (1 hour)
-        "jti": rnd,  # Random JWT ID
-        "iss": JWT_ISS,  # Issuer
+    payload = {
+        "iat": now,            # Issued at time
+        "nbf": now,            # Not valid before this time
+        "exp": now + 3600,     # Expires in 1 hour
+        "jti": rnd,            # JWT ID (random string)
+        "iss": JWT_ISS,        # Issuer
         "data": {"email": email, "name": name, "role": role}
-    }, JWT_KEY, algorithm=JWT_ALGO)
+    }
+    return jwt.encode(payload, JWT_KEY, algorithm=JWT_ALGO)
 
-# Verify JWT Token
 def jwtVerify(cookies):
+    """
+    Verify the JWT token present in the cookies.
+    Returns the user data if the token is valid, otherwise returns False.
+    """
     try:
         jwt_token = cookies.get("JWT")
         if jwt_token is None:
@@ -42,8 +54,11 @@ def jwtVerify(cookies):
         print("Invalid token.")
         return False
 
-# Role-based Access Decorator
 def role_required(required_roles):
+    """
+    Decorator that checks if the current user's role is in the required_roles list.
+    If not, it redirects the user to the login page.
+    """
     def wrapper(fn):
         @wraps(fn)
         def decorated_view(*args, **kwargs):
@@ -55,8 +70,12 @@ def role_required(required_roles):
     return wrapper
 
 def getUserByEmail(email):
+    """
+    Retrieve a user's details from the database by their email address.
+    Returns a dictionary of user details or None if the user is not found.
+    """
     conn = sqlite3.connect(DB_FILE)
-    conn.row_factory = sqlite3.Row  # This allows dictionary-style access to rows
+    conn.row_factory = sqlite3.Row  # Allow access by column name
     c = conn.cursor()
     c.execute("SELECT id, name, nickname, email, password, role FROM users WHERE email = ?", (email,))
     user = c.fetchone()
@@ -65,23 +84,25 @@ def getUserByEmail(email):
         return {
             "id": user["id"],
             "name": user["name"],
-            "nickname": user["nickname"],  # Include nickname
+            "nickname": user["nickname"],
             "email": user["email"],
-            "password": user["password"],  # Ensure this retrieves the hashed password
+            "password": user["password"],  # Note: This is the hashed password.
             "role": user["role"]
         }
     return None
 
+##################################
+# Database Initialization Function
+##################################
 
-# Initialize Database
 def init_db():
     conn = None
     try:
-        # Connect to the database
+        # Connect to the SQLite database
         conn = sqlite3.connect(DB_FILE)
         c = conn.cursor()
 
-        # Create users table without CHECK constraint for testing
+        # Create the users table
         c.execute('''CREATE TABLE IF NOT EXISTS users (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         name TEXT NOT NULL,
@@ -99,14 +120,15 @@ def init_db():
                         city TEXT,
                         postcode TEXT,
                         birthday DATE,
-                        patron INTEGER DEFAULT 0,              
+                        patron INTEGER DEFAULT 0,
                         patron_amount REAL DEFAULT 0.0,
                         paid_until DATE DEFAULT NULL,
-                        member_since DATE DEFAULT NULL,       
+                        member_since DATE DEFAULT NULL,
                         show_birthday INTEGER DEFAULT 0,
-                        description TEXT      
+                        description TEXT
                     )''')
 
+        # Create the news table
         c.execute('''CREATE TABLE IF NOT EXISTS news (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         title TEXT,
@@ -116,32 +138,34 @@ def init_db():
                         intern BOOLEAN
                     )''')
         
+        # Create the events table
         c.execute('''CREATE TABLE IF NOT EXISTS events (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         name TEXT NOT NULL,
                         description TEXT,
-                        date TEXT, -- ISO 8601 format (YYYY-MM-DD)
-                        type TEXT NOT NULL, -- Matches Schema.org types (e.g., MusicEvent, DJEvent)
-                        entry_time TEXT, -- Time (HH:MM)
-                        end_time TEXT, -- Time (HH:MM) for event end
-                        price REAL DEFAULT 0, -- Event price in Euros
-                        location TEXT DEFAULT '', -- Event location or venue
-                        num_people_per_shift INTEGER DEFAULT 1, -- Number of people required per shift
-                        theke_shift BOOLEAN DEFAULT 0, -- Whether bar shift is needed
-                        door_shift BOOLEAN DEFAULT 0, -- Whether door shift is needed
-                        double_shift BOOLEAN DEFAULT 0, -- Whether double shifts are enabled
-                        weekly BOOLEAN DEFAULT 0, -- Weekly recurrence
-                        monthly BOOLEAN DEFAULT 0, -- Monthly recurrence
-                        intern BOOLEAN DEFAULT 0, -- Internal event
-                        proposed BOOLEAN DEFAULT 0, -- Proposed event
-                        closed_from TEXT, -- Start date for holiday breaks (ISO 8601 format)
-                        closed_to TEXT, -- End date for holiday breaks (ISO 8601 format)
-                        konzertstart TEXT, -- Time (HH:MM) for concert start
-                        image_path TEXT, -- Path to event image
-                        replace_event BOOLEAN DEFAULT 0, -- Whether the event replaces another event
-                        intern_event_type TEXT NOT NULL -- For Internal Use
+                        date TEXT,
+                        type TEXT NOT NULL,
+                        entry_time TEXT,
+                        end_time TEXT,
+                        price REAL DEFAULT 0,
+                        location TEXT DEFAULT '',
+                        num_people_per_shift INTEGER DEFAULT 1,
+                        theke_shift BOOLEAN DEFAULT 0,
+                        door_shift BOOLEAN DEFAULT 0,
+                        double_shift BOOLEAN DEFAULT 0,
+                        weekly BOOLEAN DEFAULT 0,
+                        monthly BOOLEAN DEFAULT 0,
+                        intern BOOLEAN DEFAULT 0,
+                        proposed BOOLEAN DEFAULT 0,
+                        closed_from TEXT,
+                        closed_to TEXT,
+                        konzertstart TEXT,
+                        image_path TEXT,
+                        replace_event BOOLEAN DEFAULT 0,
+                        intern_event_type TEXT NOT NULL
                     )''')
-
+        
+        # Create the bands table
         c.execute('''CREATE TABLE IF NOT EXISTS bands (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         name TEXT NOT NULL,
@@ -160,6 +184,7 @@ def init_db():
                         price REAL
                      )''')
         
+        # Create the stuff table
         c.execute('''CREATE TABLE IF NOT EXISTS stuff (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         title TEXT NOT NULL,
@@ -171,6 +196,7 @@ def init_db():
                         is_intern BOOLEAN NOT NULL DEFAULT 0
                      )''')
         
+        # Create the votes table
         c.execute('''CREATE TABLE IF NOT EXISTS votes (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         title TEXT NOT NULL,
@@ -181,6 +207,7 @@ def init_db():
                         voting_finished BOOLEAN NOT NULL DEFAULT 0
                      )''')
         
+        # Create the user_votes table
         c.execute('''CREATE TABLE IF NOT EXISTS user_votes (
                         vote_id INTEGER NOT NULL,
                         user_id INTEGER NOT NULL,
@@ -189,6 +216,7 @@ def init_db():
                         FOREIGN KEY (vote_id) REFERENCES votes(id) ON DELETE CASCADE
                     )''')
         
+        # Create the contacts table
         c.execute('''CREATE TABLE IF NOT EXISTS contacts (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         category TEXT NOT NULL,
@@ -202,31 +230,72 @@ def init_db():
                         notes TEXT
                      )''')
         
+        # Create the shift_assignments table
         c.execute('''CREATE TABLE IF NOT EXISTS shift_assignments (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         event_id INTEGER NOT NULL,
                         shift_type TEXT NOT NULL,
                         schicht INTEGER NOT NULL,
-                        shift_index INTEGER NOT NULL, -- Renamed from 'index'
+                        shift_index INTEGER NOT NULL,
                         user_nick TEXT NOT NULL,
                         date TEXT NOT NULL,
                         FOREIGN KEY(event_id) REFERENCES events(id)
                     )''')
+        
+        # Create the guests table
+        c.execute('''CREATE TABLE IF NOT EXISTS guests (
+                        name TEXT,
+                        annotation TEXT,
+                        date TEXT,
+                        PRIMARY KEY (name, date)
+                    )''')
 
-        # Add default admin users if they do not exist
+        # Create the banned table
+        c.execute('''CREATE TABLE IF NOT EXISTS banned (
+                        name TEXT PRIMARY KEY,
+                        reason TEXT,
+                        description TEXT,
+                        social_link TEXT,
+                        date TEXT,
+                        ban_until TEXT
+                    )''')
+
+        # Create the banned_suggestions table
+        c.execute('''CREATE TABLE IF NOT EXISTS banned_suggestions (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name TEXT,
+                        reason TEXT,
+                        description TEXT,
+                        social_link TEXT,
+                        date TEXT,
+                        ban_until TEXT,
+                        submitted_by TEXT
+                    )''')
+
+        c.execute('''CREATE TABLE IF NOT EXISTS stuff_to_sell (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        title TEXT NOT NULL,
+                        description TEXT NOT NULL,  -- JSON string containing detailed item information
+                        image_path TEXT,
+                        date_added TEXT NOT NULL,
+                        user_name TEXT NOT NULL,
+                        is_intern BOOLEAN NOT NULL DEFAULT 0
+                    )''')
+
+
+        # Insert default admin users if they do not exist.
         admins = [
             ('Admin', 'Admin', 'admin@contrast.com', 'Abandonallhope,yewhoenterhere', 'Admin'),
             ('Lobo', 'Lobo', 'lobo@contrast.com', 'alwaysseeyourface', 'Admin')
         ]
-
         for name, nickname, email, password, role in admins:
             c.execute("SELECT * FROM users WHERE email = ?", (email,))
             if not c.fetchone():
                 hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
                 c.execute("INSERT INTO users (name, nickname, email, password, role) VALUES (?, ?, ?, ?, ?)",
-                        (name, nickname, email, hashed_password, role))
+                          (name, nickname, email, hashed_password, role))
 
-        # Commit changes
+        # Commit all changes to the database.
         conn.commit()
         print("Database initialized successfully.")
 
@@ -234,6 +303,6 @@ def init_db():
         print(f"Database error occurred: {e}")
 
     finally:
-        # Make sure to close the connection properly
+        # Ensure the database connection is closed.
         if conn:
             conn.close()

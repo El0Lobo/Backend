@@ -13,7 +13,10 @@ from routes.bands import bands_bp
 from routes.stuff import stuff_bp
 from routes.vote import vote_bp
 from routes.contact import contact_bp
-""" from routes.door import door_bp """
+from routes.door import door_bp
+from routes.register import register_bp
+
+
 
 # Flask App Setup
 app = Flask(__name__)
@@ -28,7 +31,8 @@ app.register_blueprint(bands_bp)
 app.register_blueprint(stuff_bp)
 app.register_blueprint(vote_bp)
 app.register_blueprint(contact_bp)
-""" app.register_blueprint(door_bp) """
+app.register_blueprint(door_bp)
+app.register_blueprint(register_bp)
 
 # Secret keys for JWT and session
 app.secret_key = 'YOUR_SECRET_KEY'
