@@ -5,6 +5,7 @@
   height: auto; /* Dynamically adjusts height based on content */
   min-height: auto; /* Allows it to shrink below the viewport height */
   display: block; /* Ensures the calendar takes its full content height */
+  color: black;
 }
 
 .holiday-event {
@@ -79,7 +80,7 @@ tbody[role="rowgroup"] {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  background-color: rgb(255, 255, 255);
+  background-color: rgb(28, 53, 92);
   width: auto;
   height: auto;
   padding: 10px;
@@ -97,7 +98,7 @@ tbody[role="rowgroup"] {
   background-color: rgba(0, 0, 0, 0.5);
 }
 .modal-content {
-  background-color: #fefefe;
+  background-color: rgb(28, 53, 92);
   padding: 20px;
   border: 1px solid #888;
   border-radius: 8px;

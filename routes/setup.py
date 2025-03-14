@@ -185,3 +185,18 @@ def get_items():
         return jsonify({"success": True, "items": items})
     except sqlite3.Error as e:
         return jsonify({"success": False, "message": str(e)})
+
+@setup_bp.route('/remove_item/<int:item_id>', methods=['DELETE'])
+def remove_item(item_id):
+    """
+    Endpoint to remove an item from the 'stuff_to_sell' table by ID.
+    """
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        c = conn.cursor()
+        c.execute("DELETE FROM stuff_to_sell WHERE id = ?", (item_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "message": "Item removed from DB"})
+    except sqlite3.Error as e:
+        return jsonify({"success": False, "message": f"Database error: {e}"})

@@ -378,7 +378,7 @@
     .edit-button {
         margin-left: 10px;
         cursor: pointer;
-        color: blue;
+        color: #00f3ff;
         text-decoration: underline;
     }
 
@@ -452,12 +452,7 @@
                 }
             });
         }
-        // If type is "food", "merch", or "other", you can skip or add similar logic if you want size-based options there.
 
-        // If you want to handle an uploaded image as base64 data:
-        // itemData.imageDataUrl = currentImageDataUrl; // from your file input logic
-
-        // Finally, save to the DB by calling the new endpoint.
         fetch("/add_item", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -612,20 +607,33 @@
         editLink.textContent = " Edit ";
         editLink.onclick = () => editItem(index);
         li.appendChild(editLink);
-        const removeLink = document.createElement("span");
-        removeLink.className = "edit-button";
+        const removeLink = document.createElement("button");
+        removeLink.textContent = "Remove";
         removeLink.style.color = "red";
-        removeLink.textContent = " Remove";
-        removeLink.onclick = () => removeItem(index);
+        removeLink.style.marginLeft = "10px";
+        removeLink.onclick = () => removeItem(item.id);  // Pass correct item ID
         li.appendChild(removeLink);
+
         ul.appendChild(li);
     });
 }
 
-    function removeItem(index) {
-        items.splice(index, 1);
-        renderItems();
-    }
+function removeItem(itemId) {
+    fetch(`/remove_item/${itemId}`, {
+        method: "DELETE"
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert("Item removed successfully!");
+            loadItems(); // Refresh item list after deletion
+        } else {
+            alert("Error removing item: " + data.message);
+        }
+    })
+    .catch(error => console.error("Error:", error));
+}
+
 
     function editItem(index) {
         editIndex = index;
@@ -1001,6 +1009,13 @@
 
     window.addEventListener("DOMContentLoaded", () => {
         toggleFields();
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+        let logoPath = "{{ url_for('static', filename='uploads/' + schema_defaults.get('organization_logo', '')) }}";
+        if (logoPath.trim() !== "") {
+            document.documentElement.style.setProperty("--background-image", `url('${logoPath}')`);
+        }
     });
 </script>
 {% endblock %}

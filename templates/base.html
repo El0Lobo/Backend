@@ -47,7 +47,7 @@
     </a>
 
     <a href="/bands" class="{{ 'current' if active_page == 'Bands' else '' }}">
-      <i class="ico">&#128205;🎵🎸</i> <!-- Map pin for Booking -->
+      <i class="ico">🎸</i> <!-- Map pin for Booking -->
       <i class="txt">Bands</i>
     </a>
 
@@ -161,6 +161,16 @@
           alert("Error - " + err.message);
         });
     }
+    
+
+    document.addEventListener("DOMContentLoaded", function () {
+        let logoPath = "{{ url_for('static', filename='uploads/' + schema_defaults.get('organization_logo', '')) }}";
+        if (logoPath.trim() !== "") {
+            document.documentElement.style.setProperty("--background-image", `url('${logoPath}')`);
+        }
+    });
+
+
   </script>
 </body>
 

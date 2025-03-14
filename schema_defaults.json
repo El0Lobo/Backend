@@ -11,7 +11,7 @@
     "longitude": 0.0,
     "venue_type": "BarOrPub,MusicVenue,EventVenue",
     "accessibility": "PartialWheelchairAccess",
-    "event_status": "https://schema.org/EventScheduled",
+    "event_status": null,
     "contact_email": "",
     "contact_phone": "",
     "facebook": "https://www.facebook.com/Contrastkn/",

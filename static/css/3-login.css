@@ -19,7 +19,7 @@ body {
 }
 body::before {
   content: "";
-  background-image: url("/static/images/background 2.png");
+  background-image: url("/static/images/landscape 04.png");
   background-size: cover;     /* Ensures the image covers the whole screen */
   background-position: center; /* Centers the image */
   background-attachment: fixed; /* Keeps the image fixed when scrolling */

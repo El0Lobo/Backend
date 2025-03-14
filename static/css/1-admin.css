@@ -24,11 +24,12 @@ body {
   display: flex;
   min-height: 100vh;
   padding: 0; margin: 0;
+  color: var(--color-main-bg);
 
 }
 body::before {
   content: "";
-  background-image: url("/static/images/background 2.png");
+  background-image: url("/static/images/2.png");
   background-size: cover;     /* Ensures the image covers the whole screen */
   background-position: center; /* Centers the image */
   background-attachment: fixed; /* Keeps the image fixed when scrolling */
@@ -39,6 +40,23 @@ body::before {
   width: 100vw;
   height: 100vh;
   z-index: -1; /* Places it behind the content */
+}
+body::after {
+  content: "";
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80vw;
+  height: 80vh;
+  max-width: 500px;
+  max-height: 500px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  z-index: -1;
+  background-image: var(--background-image, url("/static/uploads/default-placeholder.png"));
+  opacity: 40%;
 }
 /* (B) SIDEBAR */
 /* (B1) SIDEBAR ITSELF */
@@ -115,12 +133,12 @@ body::before {
 h1, h2 {
   font-family: Arial, Helvetica, sans-serif;
   font-size: 24px;
-  color: #000000;
-  text-shadow: 
+  color: white;
+  /* text-shadow: 
   0 0 5px rgb(236, 221, 191), 
   0 0 10px rgb(236, 221, 191), 
   0 0 15px rgb(236, 221, 191), 
-  0 0 20px rgb(236, 221, 191);
+  0 0 20px rgb(236, 221, 191); */
 }
 
 .sidebar-footer {
