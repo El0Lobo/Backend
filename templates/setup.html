@@ -17,8 +17,9 @@
             <label for="organization_logo">Organization Logo:</label>
             <input type="file" id="organization_logo" name="organization_logo" accept="image/*"><br>
             {% if schema_defaults.get('organization_logo') %}
-            <img src="{{ url_for('static', filename='uploads/' + schema_defaults.get('organization_logo')) }}"
-                alt="Organization Logo" width="100"><br>
+            <img src="{{ url_for('static', filename='uploads/' + schema_defaults.get('organization_logo', 'default-logo.png')) }}"
+                alt="Organization Logo" width="100">
+            <br>
             {% endif %}
 
             <!-- Author Details -->
@@ -527,112 +528,112 @@
     }
 
     function renderItems() {
-    // Get the preview container element
-    const previewContainer = document.getElementById("itemsPreview");
-    // Define group element IDs for each item type
-    const groups = [
-        "group-drinks-alcoholic",
-        "group-drinks-non-alcoholic",
-        "group-snacks",
-        "group-food",
-        "group-clothes",
-        "group-merch",
-        "group-other"
-    ];
-    // Clear each group's list and hide groups initially
-    groups.forEach(groupId => {
-        let groupEl = document.getElementById(groupId);
-        if (groupEl) {
-            groupEl.querySelector("ul").innerHTML = "";
-            groupEl.style.display = "none";
-        }
-    });
-    // Hide the preview container if there are no items
-    if (items.length === 0) {
-        previewContainer.style.display = "none";
-        return;
-    } else {
-        previewContainer.style.display = "block";
-    }
-    // Loop through each item to render it
-    items.forEach((item, index) => {
-        let groupId = "";
-        // Access type from the description object
-        const itemType = item.description.type;
-        if (itemType === "drinks") {
-            groupId = item.description.alcoholic ? "group-drinks-alcoholic" : "group-drinks-non-alcoholic";
-        } else if (itemType === "snacks") {
-            groupId = "group-snacks";
-        } else if (itemType === "food") {
-            groupId = "group-food";
-        } else if (itemType === "clothes") {
-            groupId = "group-clothes";
-        } else if (itemType === "merch") {
-            groupId = "group-merch";
-        } else {
-            groupId = "group-other";
-        }
-        const ul = document.querySelector(`#${groupId} ul`);
-        document.getElementById(groupId).style.display = "block";
-
-        let details = "";
-        if (itemType === "drinks") {
-            if (item.description.sizes && item.description.sizes.length > 0) {
-                let optionsHTML = item.description.sizes.map(s => {
-                    let label = s.label ? s.label + "l: " : "";
-                    return label + `${s.price}€`;
-                }).join("<br>");
-                details = "<br>" + optionsHTML;
-            } else {
-                details = item.description.alcoholic ? "Alcoholic" : "Non-Alcoholic";
-                if (item.description.volume) {
-                    details += `, Volume: ${item.description.volume}L`;
-                }
+        // Get the preview container element
+        const previewContainer = document.getElementById("itemsPreview");
+        // Define group element IDs for each item type
+        const groups = [
+            "group-drinks-alcoholic",
+            "group-drinks-non-alcoholic",
+            "group-snacks",
+            "group-food",
+            "group-clothes",
+            "group-merch",
+            "group-other"
+        ];
+        // Clear each group's list and hide groups initially
+        groups.forEach(groupId => {
+            let groupEl = document.getElementById(groupId);
+            if (groupEl) {
+                groupEl.querySelector("ul").innerHTML = "";
+                groupEl.style.display = "none";
             }
-        } else if (item.description.sizes && item.description.sizes.length > 0) {
-            const sizeStrings = item.description.sizes.map(s => {
-                let label = s.label ? s.label + ": " : "";
-                return label + `${s.price}€`;
-            });
-            details = "Options: " + sizeStrings.join(", ");
-        }
-        const li = document.createElement("li");
-        if (itemType === "drinks") {
-            li.innerHTML = item.name + " (" + details + ")";
+        });
+        // Hide the preview container if there are no items
+        if (items.length === 0) {
+            previewContainer.style.display = "none";
+            return;
         } else {
-            li.textContent = item.name + (details ? ` (${details})` : "");
+            previewContainer.style.display = "block";
         }
-        const editLink = document.createElement("span");
-        editLink.className = "edit-button";
-        editLink.textContent = " Edit ";
-        editLink.onclick = () => editItem(index);
-        li.appendChild(editLink);
-        const removeLink = document.createElement("button");
-        removeLink.textContent = "Remove";
-        removeLink.style.color = "red";
-        removeLink.style.marginLeft = "10px";
-        removeLink.onclick = () => removeItem(item.id);  // Pass correct item ID
-        li.appendChild(removeLink);
+        // Loop through each item to render it
+        items.forEach((item, index) => {
+            let groupId = "";
+            // Access type from the description object
+            const itemType = item.description.type;
+            if (itemType === "drinks") {
+                groupId = item.description.alcoholic ? "group-drinks-alcoholic" : "group-drinks-non-alcoholic";
+            } else if (itemType === "snacks") {
+                groupId = "group-snacks";
+            } else if (itemType === "food") {
+                groupId = "group-food";
+            } else if (itemType === "clothes") {
+                groupId = "group-clothes";
+            } else if (itemType === "merch") {
+                groupId = "group-merch";
+            } else {
+                groupId = "group-other";
+            }
+            const ul = document.querySelector(`#${groupId} ul`);
+            document.getElementById(groupId).style.display = "block";
 
-        ul.appendChild(li);
-    });
-}
+            let details = "";
+            if (itemType === "drinks") {
+                if (item.description.sizes && item.description.sizes.length > 0) {
+                    let optionsHTML = item.description.sizes.map(s => {
+                        let label = s.label ? s.label + "l: " : "";
+                        return label + `${s.price}€`;
+                    }).join("<br>");
+                    details = "<br>" + optionsHTML;
+                } else {
+                    details = item.description.alcoholic ? "Alcoholic" : "Non-Alcoholic";
+                    if (item.description.volume) {
+                        details += `, Volume: ${item.description.volume}L`;
+                    }
+                }
+            } else if (item.description.sizes && item.description.sizes.length > 0) {
+                const sizeStrings = item.description.sizes.map(s => {
+                    let label = s.label ? s.label + ": " : "";
+                    return label + `${s.price}€`;
+                });
+                details = "Options: " + sizeStrings.join(", ");
+            }
+            const li = document.createElement("li");
+            if (itemType === "drinks") {
+                li.innerHTML = item.name + " (" + details + ")";
+            } else {
+                li.textContent = item.name + (details ? ` (${details})` : "");
+            }
+            const editLink = document.createElement("span");
+            editLink.className = "edit-button";
+            editLink.textContent = " Edit ";
+            editLink.onclick = () => editItem(index);
+            li.appendChild(editLink);
+            const removeLink = document.createElement("button");
+            removeLink.textContent = "Remove";
+            removeLink.style.color = "red";
+            removeLink.style.marginLeft = "10px";
+            removeLink.onclick = () => removeItem(item.id);  // Pass correct item ID
+            li.appendChild(removeLink);
 
-function removeItem(itemId) {
-    fetch(`/remove_item/${itemId}`, {
-        method: "DELETE"
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert("Item removed successfully!");
-            loadItems(); // Refresh item list after deletion
-        } else {
-            alert("Error removing item: " + data.message);
-        }
-    })
-    .catch(error => console.error("Error:", error));
-}
+            ul.appendChild(li);
+        });
+    }
+
+    function removeItem(itemId) {
+        fetch(`/remove_item/${itemId}`, {
+            method: "DELETE"
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Item removed successfully!");
+                    loadItems(); // Refresh item list after deletion
+                } else {
+                    alert("Error removing item: " + data.message);
+                }
+            })
+            .catch(error => console.error("Error:", error));
+    }
 
 
     function editItem(index) {

@@ -55,8 +55,7 @@ body::after {
   background-repeat: no-repeat;
   background-position: center;
   z-index: -1;
-  background-image: var(--background-image, url("/static/uploads/default-placeholder.png"));
-  opacity: 40%;
+  background-image: var(--background-image, url("/static/images/Ⓐ.png")) !important;  opacity: 40%;
 }
 /* (B) SIDEBAR */
 /* (B1) SIDEBAR ITSELF */
