@@ -16,10 +16,12 @@
 }
 body {
   background: var(--color-body-bg);
+  height: 100vh;
+  overflow: hidden;
 }
 body::before {
   content: "";
-  background-image: url("/static/images/landscape 04.png");
+  background-image: url("/static/images/2.png");
   background-size: cover;     /* Ensures the image covers the whole screen */
   background-position: center; /* Centers the image */
   background-attachment: fixed; /* Keeps the image fixed when scrolling */
@@ -31,13 +33,32 @@ body::before {
   height: 100vh;
   z-index: -1; /* Places it behind the content */
 }
+body::after {
+  content: "";
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80vw;
+  height: 80vh;
+  max-width: 500px;
+  max-height: 500px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  z-index: -1;
+  background-image: var(--background-image, url("/static/images/Ⓐ.png")) !important;  opacity: 40%;
+}
 /* (B) LOGIN FORM */
 form {
   width: 400px;
   padding: 20px;
   margin: 0 auto;
   border: 1px solid var(--color-form-border);
-  background: var(--color-form-bg);
+  background: rgba(170, 169, 169, 0.161);
+  position: relative;
+  top: 30%;
+  color: white;
 }
 form h1 {
   font-size: 28px;
@@ -48,7 +69,7 @@ form label, form input {
   width: 100%;
 }
 form label {
-  color: var(--color-form-label);
+  color: #fff;
   padding: 10px 0;
 }
 form input { padding: 10px; }
