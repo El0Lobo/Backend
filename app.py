@@ -27,7 +27,7 @@ JWT_SECRET = "YOUR_SECRET_KEY"
 JWT_ALGO = "HS256"
 
 # Upload folder setup
-UPLOAD_FOLDER = 'static/uploads'
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # Database Setup
